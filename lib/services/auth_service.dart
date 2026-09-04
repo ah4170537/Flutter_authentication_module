@@ -1,0 +1,174 @@
+import 'dart:convert';
+import 'dart:math';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:http/http.dart' as http;
+
+class AuthService {
+  AuthService._();
+  static final AuthService instance = AuthService._();
+
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  User? get currentUser => _auth.currentUser;
+  Stream<User?> get authStateChanges => _auth.authStateChanges();
+
+  // EmailJS Credentials
+  static const String _emailJsServiceId = 'service_ooo5xze';
+  static const String _emailJsTemplateId = 'template_n4ykzgf';
+  static const String _emailJsPublicKey = 'xLJyWo6CV8LvFq26t';
+
+  Future<UserCredential> signUp({
+    required String email,
+    required String password,
+  }) async {
+    final trimmedEmail = email.trim().toLowerCase();
+
+    final credential = await _auth.createUserWithEmailAndPassword(
+      email: trimmedEmail,
+      password: password,
+    );
+
+    if (credential.user != null) {
+      try {
+        await _firestore.collection('users').doc(credential.user!.uid).set({
+          'email': trimmedEmail,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      } catch (_) {
+      }
+    }
+
+    return credential;
+  }
+
+  Future<UserCredential> signIn({
+    required String email,
+    required String password,
+  }) {
+    return _auth.signInWithEmailAndPassword(
+      email: email.trim(),
+      password: password,
+    );
+  }
+
+  Future<void> signOut() => _auth.signOut();
+
+  Future<bool> checkEmailExists(String email) async {
+    final trimmedEmail = email.trim().toLowerCase();
+
+    try {
+      final query = await _firestore
+          .collection('users')
+          .where('email', isEqualTo: trimmedEmail)
+          .limit(1)
+          .get();
+
+      return query.docs.isNotEmpty;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<void> sendEmailOtp(String email) async {
+    final String trimmedEmail = email.trim().toLowerCase();
+    final String otp = (1000 + Random().nextInt(9000)).toString();
+
+    await _firestore.collection('otp_codes').doc(trimmedEmail).set({
+      'code': otp,
+      'createdAt': FieldValue.serverTimestamp(),
+      'expiresAt': DateTime.now()
+          .add(const Duration(minutes: 5))
+          .millisecondsSinceEpoch,
+    });
+
+    final url = Uri.parse('https://api.emailjs.com/api/v1.0/email/send');
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'service_id': _emailJsServiceId,
+        'template_id': _emailJsTemplateId,
+        'user_id': _emailJsPublicKey,
+        'template_params': {'user_email': trimmedEmail, 'otp_code': otp},
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Email delivery failed: ${response.body}');
+    }
+  }
+
+  Future<bool> verifyEmailOtp({
+    required String email,
+    required String userOtp,
+  }) async {
+    final String trimmedEmail = email.trim().toLowerCase();
+    final docSnapshot = await _firestore
+        .collection('otp_codes')
+        .doc(trimmedEmail)
+        .get();
+
+    if (!docSnapshot.exists) return false;
+
+    final data = docSnapshot.data()!;
+    final String storedOtp = data['code'];
+    final int expiresAt = data['expiresAt'];
+
+    if (DateTime.now().millisecondsSinceEpoch > expiresAt) {
+      await _firestore.collection('otp_codes').doc(trimmedEmail).delete();
+      return false;
+    }
+
+    if (storedOtp == userOtp.trim()) {
+      await _firestore.collection('otp_codes').doc(trimmedEmail).delete();
+      return true;
+    }
+
+    return false;
+  }
+
+  Future<void> resetPasswordForEmail({
+    required String email,
+    required String newPassword,
+  }) async {
+    final trimmedEmail = email.trim().toLowerCase();
+
+    final url = Uri.parse(
+      'https://auth-app-backend-jet.vercel.app/api/reset-password',
+    );
+
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'email': trimmedEmail,
+        'newPassword': newPassword.trim(),
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      final errorData = jsonDecode(response.body);
+      throw Exception(errorData['error'] ?? 'Failed to update password');
+    }
+  }
+
+  String messageForError(FirebaseAuthException e) {
+    switch (e.code) {
+      case 'email-already-in-use':
+        return 'An account already exists for that email.';
+      case 'invalid-email':
+        return 'That email address looks invalid.';
+      case 'user-not-found':
+      case 'wrong-password':
+      case 'invalid-credential':
+        return 'Incorrect email or password.';
+      case 'weak-password':
+        return 'Password is too weak.';
+      default:
+        return e.message ?? 'Something went wrong. Please try again.';
+    }
+  }
+}

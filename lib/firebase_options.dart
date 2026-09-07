@@ -41,48 +41,51 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyCENHrDV3Vhv8Rpm4cFW6Lk0v1ktOG0iRQ',
-    appId: '1:91270722998:web:880eff31ed9f6960e03d17',
-    messagingSenderId: '91270722998',
-    projectId: 'authentication-app-25933',
-    authDomain: 'authentication-app-25933.firebaseapp.com',
-    storageBucket: 'authentication-app-25933.firebasestorage.app',
-    measurementId: 'G-Z90DXB2XNS',
+    apiKey: 'AIzaSyA5j5cTZWfUEWxT7v-UIFH5TVwwHP2Ckz8',
+    appId: '1:754296650532:web:48e10a188bd2b8582bd1b1',
+    messagingSenderId: '754296650532',
+    projectId: 'e-commerce-app-bfe73',
+    authDomain: 'e-commerce-app-bfe73.firebaseapp.com',
+    databaseURL: 'https://e-commerce-app-bfe73-default-rtdb.firebaseio.com',
+    storageBucket: 'e-commerce-app-bfe73.firebasestorage.app',
+    measurementId: 'G-C2J13E8CVV',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyCsWhVGCkNYKsqu7_LVFx6OTIUde8F48gc',
-    appId: '1:91270722998:android:0a487ce553d84c3ce03d17',
-    messagingSenderId: '91270722998',
-    projectId: 'authentication-app-25933',
-    storageBucket: 'authentication-app-25933.firebasestorage.app',
+    apiKey: 'AIzaSyDqmK2ecj4s3C5wAQXwX8iISxFZt6EMUrg',
+    appId: '1:754296650532:android:054126a98ba8f1582bd1b1',
+    messagingSenderId: '754296650532',
+    projectId: 'e-commerce-app-bfe73',
+    databaseURL: 'https://e-commerce-app-bfe73-default-rtdb.firebaseio.com',
+    storageBucket: 'e-commerce-app-bfe73.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyBVV6mnRAnbSlMuoP95k16DAxuDhLCYmug',
-    appId: '1:91270722998:ios:b71c9d2d49676f65e03d17',
-    messagingSenderId: '91270722998',
-    projectId: 'authentication-app-25933',
-    storageBucket: 'authentication-app-25933.firebasestorage.app',
+    apiKey: 'AIzaSyAvjnj1Q9MikkZqPwuP5SWyfIkyoGfu6UI',
+    appId: '1:754296650532:ios:430b26b1603421792bd1b1',
+    messagingSenderId: '754296650532',
+    projectId: 'e-commerce-app-bfe73',
+    databaseURL: 'https://e-commerce-app-bfe73-default-rtdb.firebaseio.com',
+    storageBucket: 'e-commerce-app-bfe73.firebasestorage.app',
     iosBundleId: 'com.example.authenticationModule',
   );
-
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyBVV6mnRAnbSlMuoP95k16DAxuDhLCYmug',
-    appId: '1:91270722998:ios:b71c9d2d49676f65e03d17',
-    messagingSenderId: '91270722998',
-    projectId: 'authentication-app-25933',
-    storageBucket: 'authentication-app-25933.firebasestorage.app',
+    apiKey: 'AIzaSyAvjnj1Q9MikkZqPwuP5SWyfIkyoGfu6UI',
+    appId: '1:754296650532:ios:430b26b1603421792bd1b1',
+    messagingSenderId: '754296650532',
+    projectId: 'e-commerce-app-bfe73',
+    databaseURL: 'https://e-commerce-app-bfe73-default-rtdb.firebaseio.com',
+    storageBucket: 'e-commerce-app-bfe73.firebasestorage.app',
     iosBundleId: 'com.example.authenticationModule',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyCENHrDV3Vhv8Rpm4cFW6Lk0v1ktOG0iRQ',
-    appId: '1:91270722998:web:1060b319a85806dce03d17',
-    messagingSenderId: '91270722998',
-    projectId: 'authentication-app-25933',
-    authDomain: 'authentication-app-25933.firebaseapp.com',
-    storageBucket: 'authentication-app-25933.firebasestorage.app',
-    measurementId: 'G-NFBMVWWCHP',
+    apiKey: 'AIzaSyA5j5cTZWfUEWxT7v-UIFH5TVwwHP2Ckz8',
+    appId: '1:754296650532:web:8a2dd208fc98f4e22bd1b1',
+    messagingSenderId: '754296650532',
+    projectId: 'e-commerce-app-bfe73',
+    authDomain: 'e-commerce-app-bfe73.firebaseapp.com',
+    databaseURL: 'https://e-commerce-app-bfe73-default-rtdb.firebaseio.com',
+    storageBucket: 'e-commerce-app-bfe73.firebasestorage.app',
+    measurementId: 'G-VPXWH30YFH',
   );
 }

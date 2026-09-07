@@ -55,6 +55,7 @@ class _RegisterState extends State<Register> {
     setState(() => _isLoading = true);
     try {
       final credential = await AuthService.instance.signUp(
+        name: _nameController.text,
         email: _emailController.text,
         password: _passwordController.text,
       );
@@ -76,9 +77,8 @@ class _RegisterState extends State<Register> {
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override

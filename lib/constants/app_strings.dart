@@ -51,15 +51,20 @@ class AppStrings {
   static const String resetPassword = "Reset Password";
 
   // Dashboard screen
-  static const String dashboardWelcome = "Welcome back";
-  static const String dashboardSubtitle = "Here's what's happening today";
-  static const String statProjects = "Projects";
-  static const String statTasks = "Tasks";
-  static const String statAlerts = "Alerts";
-  static const String quickActions = "Quick actions";
-  static const String menuProfile = "My profile";
-  static const String menuSettings = "Settings";
-  static const String menuNotifications = "Notifications";
-  static const String menuHelp = "Help & support";
-  static const String logout = "Logout";
+  static const String appTitle = 'Ahmads Shop';
+  static const String hi = 'Hi, ';
+  static const String userFallback = 'User';
+  static const String featuredCategory = 'featured';
+  static const String productsCollection = 'products';
+  static const String nameField = 'name';
+  static const String priceField = 'price';
+  static const String imageUrlField = 'imageUrl';
+  static const String categoryField = 'category';
+  static const String currencyPrefix = 'Rs. ';
+  static const String defaultProductName = 'Product';
+  static const String noFeaturedProducts = 'No featured products available.';
+  static const String categoriesCollection = 'categories';
+  static const String categoryNameField = 'name';
+  static const String categoryIconField = 'icon';
+  static const String noCategoriesFound = 'No categories found.';
 }

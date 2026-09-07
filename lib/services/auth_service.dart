@@ -20,11 +20,14 @@ class AuthService {
   static const String _emailJsTemplateId = 'template_n4ykzgf';
   static const String _emailJsPublicKey = 'xLJyWo6CV8LvFq26t';
 
+  /// SignUp updated to capture name and save to Firestore + Auth Display Name
   Future<UserCredential> signUp({
+    required String name,
     required String email,
     required String password,
   }) async {
     final trimmedEmail = email.trim().toLowerCase();
+    final trimmedName = name.trim();
 
     final credential = await _auth.createUserWithEmailAndPassword(
       email: trimmedEmail,
@@ -32,13 +35,18 @@ class AuthService {
     );
 
     if (credential.user != null) {
+      // 1. Update Firebase Auth Display Name
+      await credential.user!.updateDisplayName(trimmedName);
+
+      // 2. Save user document in Firestore
       try {
         await _firestore.collection('users').doc(credential.user!.uid).set({
+          'uid': credential.user!.uid,
+          'name': trimmedName,
           'email': trimmedEmail,
           'createdAt': FieldValue.serverTimestamp(),
         });
-      } catch (_) {
-      }
+      } catch (_) {}
     }
 
     return credential;

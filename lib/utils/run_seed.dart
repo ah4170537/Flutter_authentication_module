@@ -5,14 +5,24 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter/widgets.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // 1. Import dotenv
 import 'package:http/http.dart' as http;
 
 import '../firebase_options.dart';
 
-const String _imgBbApiKey = '3bb7870c5e1b7129ddd049028e05df50';
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 2. Load the .env file first so variables are available
+  await dotenv.load(fileName: ".env");
+
+  // 3. Retrieve the key safely inside main
+  final String? imgBbApiKey = dotenv.env['IMGBB_API_KEY'];
+
+  if (imgBbApiKey == null || imgBbApiKey.isEmpty) {
+    print('Error: IMGBB_API_KEY is missing from the .env file!');
+    return;
+  }
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
@@ -152,7 +162,7 @@ void main() async {
 
     // 2. Upload image to ImgBB only for new products
     print('New product detected: "${product['name']}" (ID: $docId). Uploading image...');
-    final String? imageUrl = await uploadAssetToImgBB(product['localImagePath']);
+    final String? imageUrl = await uploadAssetToImgBB(product['localImagePath'], imgBbApiKey);
 
     if (imageUrl != null) {
       batch.set(docRef, {
@@ -179,14 +189,14 @@ void main() async {
 }
 
 /// Reads asset bundle bytes and uploads to ImgBB
-Future<String?> uploadAssetToImgBB(String assetPath) async {
+Future<String?> uploadAssetToImgBB(String assetPath, String apiKey) async {
   try {
     final ByteData byteData = await rootBundle.load(assetPath);
     final Uint8List imageBytes = byteData.buffer.asUint8List();
     final String base64Image = base64Encode(imageBytes);
 
     final response = await http.post(
-      Uri.parse('https://api.imgbb.com/1/upload?key=$_imgBbApiKey'),
+      Uri.parse('https://api.imgbb.com/1/upload?key=$apiKey'),
       body: {'image': base64Image},
     );
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../constants/app_strings.dart';
@@ -40,9 +41,7 @@ class _OtpVerificationState extends State<OtpVerification> {
       if (isValid) {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (_) => NewPassword(email: widget.email),
-          ),
+          MaterialPageRoute(builder: (_) => NewPassword(email: widget.email)),
         );
       } else {
         _showMessage("Invalid or expired OTP code.");
@@ -71,68 +70,72 @@ class _OtpVerificationState extends State<OtpVerification> {
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.offWhite,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            const GradientHeader(height: 180, logoSize: 50),
-            Transform.translate(
-              offset: const Offset(0, 50),
-              child: AuthCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      AppStrings.otpTitle,
-                      style: AppTextStyles.heading,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      widget.email.isEmpty
-                          ? AppStrings.otpSubtitle
-                          : "Enter the 4-digit code we sent to ${widget.email}",
-                      style: AppTextStyles.subheading,
-                    ),
-                    const SizedBox(height: 35),
-
-                    OtpInputRow(
-                      onChanged: (code) => setState(() => _code = code),
-                    ),
-
-                    const SizedBox(height: 35),
-                    SizedBox(
-                      width: double.infinity,
-                      child: PillButton(
-                        text: AppStrings.verify,
-                        backgroundColor: AppColors.primaryLight,
-                        textStyle: AppTextStyles.buttonTextWhite,
-                        isLoading: _isLoading,
-                        onPressed: _code.length == 4 ? _handleVerifyOtp : null,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              const GradientHeader(height: 150, logoSize: 50),
+              Transform.translate(
+                offset: const Offset(0, 50),
+                child: AuthCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        AppStrings.otpTitle,
+                        style: AppTextStyles.heading,
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 8),
+                      Text(
+                        widget.email.isEmpty
+                            ? AppStrings.otpSubtitle
+                            : "Enter the 4-digit code we sent to ${widget.email}",
+                        style: AppTextStyles.subheading,
+                      ),
+                      const SizedBox(height: 35),
+
+                      OtpInputRow(
+                        onChanged: (code) => setState(() => _code = code),
+                      ),
+
+                      const SizedBox(height: 35),
+                      SizedBox(
+                        width: double.infinity,
+                        child: PillButton(
+                          text: AppStrings.verify,
+                          backgroundColor: AppColors.primaryLight,
+                          textStyle: AppTextStyles.buttonTextWhite,
+                          isLoading: _isLoading,
+                          onPressed: _code.length == 4
+                              ? _handleVerifyOtp
+                              : null,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 15),
-            Padding(
-              padding: const EdgeInsets.only(top: 50),
-              child: AuthFooterLink(
-                promptText: AppStrings.resendCodePrompt,
-                actionText:
-                    _isResending ? "Sending..." : AppStrings.resendCodeAction,
-                onTap: _handleResendOtp,
+              const SizedBox(height: 15),
+              Padding(
+                padding: const EdgeInsets.only(top: 50),
+                child: AuthFooterLink(
+                  promptText: AppStrings.resendCodePrompt,
+                  actionText: _isResending
+                      ? "Sending..."
+                      : AppStrings.resendCodeAction,
+                  onTap: _handleResendOtp,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

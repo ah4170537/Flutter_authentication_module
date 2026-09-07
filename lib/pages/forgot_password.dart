@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../constants/app_strings.dart';
@@ -55,9 +56,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
       // 4. Navigate to OTP screen upon success
       Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (_) => OtpVerification(email: email),
-        ),
+        MaterialPageRoute(builder: (_) => OtpVerification(email: email)),
       );
     } catch (e) {
       _showMessage("Failed to send OTP code: $e");
@@ -67,60 +66,61 @@ class _ForgotPasswordState extends State<ForgotPassword> {
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.offWhite,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            const GradientHeader(height: 180, logoSize: 50),
-            Transform.translate(
-              offset: const Offset(0, 50),
-              child: AuthCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      AppStrings.forgotPasswordTitle,
-                      style: AppTextStyles.heading,
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      AppStrings.forgotPasswordSubtitle,
-                      style: AppTextStyles.subheading,
-                    ),
-                    const SizedBox(height: 30),
-
-                    AuthTextField(
-                      label: AppStrings.emailLabel,
-                      controller: _emailController,
-                      icon: Icons.email_outlined,
-                      keyboardType: TextInputType.emailAddress,
-                    ),
-
-                    const SizedBox(height: 10),
-                    SizedBox(
-                      width: double.infinity,
-                      child: PillButton(
-                        text: AppStrings.sendCode,
-                        backgroundColor: AppColors.primaryLight,
-                        textStyle: AppTextStyles.buttonTextWhite,
-                        isLoading: _isLoading,
-                        onPressed: _handleSendCode,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              const GradientHeader(height: 150, logoSize: 50),
+              Transform.translate(
+                offset: const Offset(0, 50),
+                child: AuthCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        AppStrings.forgotPasswordTitle,
+                        style: AppTextStyles.heading,
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 8),
+                      const Text(
+                        AppStrings.forgotPasswordSubtitle,
+                        style: AppTextStyles.subheading,
+                      ),
+                      const SizedBox(height: 30),
+
+                      AuthTextField(
+                        label: AppStrings.emailLabel,
+                        controller: _emailController,
+                        icon: Icons.email_outlined,
+                        keyboardType: TextInputType.emailAddress,
+                      ),
+
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        width: double.infinity,
+                        child: PillButton(
+                          text: AppStrings.sendCode,
+                          backgroundColor: AppColors.primaryLight,
+                          textStyle: AppTextStyles.buttonTextWhite,
+                          isLoading: _isLoading,
+                          onPressed: _handleSendCode,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 15),
-          ],
+              const SizedBox(height: 15),
+            ],
+          ),
         ),
       ),
     );

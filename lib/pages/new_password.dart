@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../constants/app_strings.dart';
@@ -83,69 +84,71 @@ class _NewPasswordState extends State<NewPassword> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.offWhite,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            const GradientHeader(height: 180, logoSize: 50),
-            Transform.translate(
-              offset: const Offset(0, 50),
-              child: AuthCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      AppStrings.newPasswordTitle,
-                      style: AppTextStyles.heading,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      "Set a new password for ${widget.email}",
-                      style: AppTextStyles.subheading,
-                    ),
-                    const SizedBox(height: 30),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              const GradientHeader(height: 150, logoSize: 50),
+              Transform.translate(
+                offset: const Offset(0, 50),
+                child: AuthCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        AppStrings.newPasswordTitle,
+                        style: AppTextStyles.heading,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        "Set a new password for ${widget.email}",
+                        style: AppTextStyles.subheading,
+                      ),
+                      const SizedBox(height: 30),
 
-                    AuthTextField(
-                      label: AppStrings.newPasswordLabel,
-                      controller: _passwordController,
-                      icon: Icons.lock_outline,
-                      isPassword: true,
-                    ),
-                    AuthTextField(
-                      label: AppStrings.confirmPasswordLabel,
-                      controller: _confirmController,
-                      icon: Icons.lock_outline,
-                      isPassword: true,
-                    ),
+                      AuthTextField(
+                        label: AppStrings.newPasswordLabel,
+                        controller: _passwordController,
+                        icon: Icons.lock_outline,
+                        isPassword: true,
+                      ),
+                      AuthTextField(
+                        label: AppStrings.confirmPasswordLabel,
+                        controller: _confirmController,
+                        icon: Icons.lock_outline,
+                        isPassword: true,
+                      ),
 
-                    if (_errorText != null)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 15),
-                        child: Text(
-                          _errorText!,
-                          style: const TextStyle(
-                            color: Colors.redAccent,
-                            fontSize: 13,
+                      if (_errorText != null)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 15),
+                          child: Text(
+                            _errorText!,
+                            style: const TextStyle(
+                              color: Colors.redAccent,
+                              fontSize: 13,
+                            ),
                           ),
                         ),
-                      ),
 
-                    const SizedBox(height: 10),
-                    SizedBox(
-                      width: double.infinity,
-                      child: PillButton(
-                        text: AppStrings.resetPassword,
-                        backgroundColor: AppColors.secondaryDark,
-                        textStyle: AppTextStyles.buttonTextWhite,
-                        isLoading: _isLoading,
-                        onPressed: _handleReset,
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        width: double.infinity,
+                        child: PillButton(
+                          text: AppStrings.resetPassword,
+                          backgroundColor: AppColors.secondaryDark,
+                          textStyle: AppTextStyles.buttonTextWhite,
+                          isLoading: _isLoading,
+                          onPressed: _handleReset,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 30),
-          ],
+              const SizedBox(height: 30),
+            ],
+          ),
         ),
       ),
     );

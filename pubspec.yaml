@@ -10,6 +10,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_dotenv: ^5.2.1
 
   cupertino_icons: ^1.0.8
   firebase_core: ^4.14.0
@@ -29,3 +30,4 @@ flutter:
   assets:
     - assets/images/logo.png
     - assets/products/
+    - .env

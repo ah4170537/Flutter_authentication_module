@@ -76,99 +76,102 @@ class _LoginState extends State<Login> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.offWhite,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            const GradientHeader(height: 180, logoSize: 50),
-            Transform.translate(
-              offset: const Offset(0, 50),
-              child: AuthCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    const Text(
-                      AppStrings.helloTitle,
-                      style: AppTextStyles.heading,
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      AppStrings.signInSubtitle,
-                      style: AppTextStyles.subheading,
-                    ),
-                    const SizedBox(height: 30),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              const GradientHeader(height: 150, logoSize: 50),
+              Transform.translate(
+                offset: const Offset(0, 50),
+                child: AuthCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const Text(
+                        AppStrings.helloTitle,
+                        style: AppTextStyles.heading,
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        AppStrings.signInSubtitle,
+                        style: AppTextStyles.subheading,
+                      ),
+                      const SizedBox(height: 30),
 
-                    AuthTextField(
-                      label: AppStrings.emailLabel,
-                      controller: _emailController,
-                      icon: Icons.email_outlined,
-                      keyboardType: TextInputType.emailAddress,
-                    ),
-                    AuthTextField(
-                      label: AppStrings.passwordLabel,
-                      controller: _passwordController,
-                      icon: Icons.lock_outline,
-                      isPassword: true,
-                    ),
+                      AuthTextField(
+                        label: AppStrings.emailLabel,
+                        controller: _emailController,
+                        icon: Icons.email_outlined,
+                        keyboardType: TextInputType.emailAddress,
+                      ),
+                      AuthTextField(
+                        label: AppStrings.passwordLabel,
+                        controller: _passwordController,
+                        icon: Icons.lock_outline,
+                        isPassword: true,
+                      ),
 
-                    // Added Forgot Password link
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const ForgotPassword()),
-                  );
-                        },
-                        child: const Text(
-                          AppStrings.forgotPassword,
-                          style: AppTextStyles
-                              .footerText,
+                      // Added Forgot Password link
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const ForgotPassword(),
+                              ),
+                            );
+                          },
+                          child: const Text(
+                            AppStrings.forgotPassword,
+                            style: AppTextStyles.footerText,
+                          ),
                         ),
                       ),
-                    ),
 
-                    const SizedBox(height: 20),
+                      const SizedBox(height: 20),
 
-                    SizedBox(
-                      width: double.infinity,
-                      child: PillButton(
-                        text: AppStrings.login,
-                        backgroundColor: AppColors.primaryLight,
-                        textStyle: AppTextStyles.buttonTextWhite,
-                        isLoading: _isLoading,
-                        onPressed: _handleLogin,
+                      SizedBox(
+                        width: double.infinity,
+                        child: PillButton(
+                          text: AppStrings.login,
+                          backgroundColor: AppColors.primaryLight,
+                          textStyle: AppTextStyles.buttonTextWhite,
+                          isLoading: _isLoading,
+                          onPressed: _handleLogin,
+                        ),
                       ),
-                    ),
 
-                    const SizedBox(height: 25),
-                    const Center(
-                      child: Text(
-                        AppStrings.orLoginSocial,
-                        style: AppTextStyles.footerText,
+                      const SizedBox(height: 25),
+                      const Center(
+                        child: Text(
+                          AppStrings.orLoginSocial,
+                          style: AppTextStyles.footerText,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 15),
-                    const SocialIconsRow(),
-                  ],
+                      const SizedBox(height: 15),
+                      const SocialIconsRow(),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 15),
-            Padding(
-              padding: const EdgeInsets.only(top: 50),
-              child: AuthFooterLink(
-                promptText: AppStrings.noAccount,
-                actionText: AppStrings.registerNow,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const Register()),
-                  );
-                },
+              const SizedBox(height: 15),
+              Padding(
+                padding: const EdgeInsets.only(top: 50),
+                child: AuthFooterLink(
+                  promptText: AppStrings.noAccount,
+                  actionText: AppStrings.registerNow,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const Register()),
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

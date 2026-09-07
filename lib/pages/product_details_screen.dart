@@ -2,282 +2,294 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../constants/app_strings.dart';
+import '../services/cart_service.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_gradients.dart';
 import '../theme/app_text_styles.dart';
+import '../widgets/quantity_selector.dart';
+import 'cart_screen.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
   final String productId;
 
-  const ProductDetailsScreen({
-    super.key,
-    required this.productId,
-  });
+  const ProductDetailsScreen({super.key, required this.productId});
 
   @override
   State<ProductDetailsScreen> createState() => _ProductDetailsScreenState();
 }
 
 class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
-  int _quantity = 1;
+  final CartService _cartService = CartService();
+  int _selectedQuantity = 1;
+  late final Stream<DocumentSnapshot> _productStream;
 
-  void _incrementQuantity() {
-    setState(() {
-      _quantity++;
-    });
-  }
-
-  void _decrementQuantity() {
-    if (_quantity > 1) {
-      setState(() {
-        _quantity--;
-      });
-    }
-  }
-
-  void _addToCart(String name, num unitPrice) {
-   final double totalPrice = (unitPrice * _quantity).toDouble();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Added $_quantity x $name to cart (\$$totalPrice)'),
-        backgroundColor: AppColors.primaryDark,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+  @override
+  void initState() {
+    super.initState(); // Must always be called first
+    _productStream = FirebaseFirestore.instance
+        .collection(AppStrings.productsCollection)
+        .doc(widget.productId)
+        .snapshots();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.white,
-      body: StreamBuilder<DocumentSnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection(AppStrings.productsCollection)
-            .doc(widget.productId)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(color: AppColors.primaryDark),
-            );
-          }
+      body: SafeArea(
+        child: StreamBuilder<DocumentSnapshot>(
+          stream: _productStream,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: CircularProgressIndicator(color: AppColors.primaryDark),
+              );
+            }
 
-          if (snapshot.hasError || !snapshot.hasData || !snapshot.data!.exists) {
-            return Scaffold(
-              appBar: AppBar(elevation: 0),
-              body: const Center(
-                child: Text('Product not found.'),
-              ),
-            );
-          }
+            if (snapshot.hasError ||
+                !snapshot.hasData ||
+                !snapshot.data!.exists) {
+              return Scaffold(
+                appBar: AppBar(title: const Text('Error')),
+                body: const Center(child: Text('Product not found.')),
+              );
+            }
 
-          final data = snapshot.data!.data() as Map<String, dynamic>;
-          final String name = data[AppStrings.nameField] ?? AppStrings.defaultProductName;
-          final num price = data[AppStrings.priceField] ?? 0;
-          final String imageUrl = data[AppStrings.imageUrlField] ?? '';
-          final String description = data['description'] ?? 'No description available for this product.';
+            final data = snapshot.data!.data() as Map<String, dynamic>;
+            final String name =
+                data[AppStrings.nameField] ?? AppStrings.defaultProductName;
+            final num price = data[AppStrings.priceField] ?? 0;
+            final String imageUrl = data[AppStrings.imageUrlField] ?? '';
+            final String description = data['description'] ??
+                'No description available for this product.';
 
-          return Column(
-            children: [
-              // Dynamic Header Image & Back Button
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Stack(
+            return CustomScrollView(
+              slivers: [
+                // Collapsible Image Header
+                SliverAppBar(
+                  expandedHeight: 320,
+                  pinned: true,
+                  elevation: 0,
+                  backgroundColor: AppColors.white,
+                  automaticallyImplyLeading: false,
+                  leading: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: CircleAvatar(
+                      backgroundColor: Colors.black.withValues(alpha: 0.4),
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.arrow_back,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ),
+                  ),
+                  flexibleSpace: FlexibleSpaceBar(
+                    background: Image.network(
+                      imageUrl,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        color: AppColors.hintGrey,
+                        child: const Icon(
+                          Icons.image_not_supported,
+                          size: 50,
+                          color: AppColors.textGrey,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Product Details Content
+                SliverToBoxAdapter(
+                  child: Container(
+                    transform: Matrix4.translationValues(0.0, -20.0, 0.0),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(28),
+                        topRight: Radius.circular(28),
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
-                            height: 320,
-                            width: double.infinity,
-                            color: AppColors.hintGrey,
-                            child: Image.network(
-                              imageUrl,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  const Icon(Icons.image_not_supported, size: 50, color: AppColors.textGrey),
-                            ),
-                          ),
-                          SafeArea(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                              child: CircleAvatar(
-                                backgroundColor: Colors.black.withValues(alpha: 0.4),
-                                child: IconButton(
-                                  icon: const Icon(Icons.arrow_back, color: Colors.white),
-                                  onPressed: () => Navigator.pop(context),
-                                ),
+                          Center(
+                            child: Container(
+                              width: 40,
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade300,
+                                borderRadius: BorderRadius.circular(10),
                               ),
                             ),
                           ),
-                        ],
-                      ),
+                          const SizedBox(height: 20),
 
-                      // Product Details
-                      Padding(
-                        padding: const EdgeInsets.all(20.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    name,
-                                    style: AppTextStyles.brandTitle.copyWith(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.primaryDark,
-                                    ),
-                                  ),
-                                ),
-                                Text(
-                                  '${AppStrings.currencyPrefix}$price',
-                                  style: AppTextStyles.productPrice.copyWith(
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  name,
+                                  style: AppTextStyles.brandTitle.copyWith(
                                     fontSize: 22,
                                     fontWeight: FontWeight.bold,
                                     color: AppColors.primaryDark,
                                   ),
                                 ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-
-                            // Quantity Selector Row
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text(
-                                  'Quantity',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.textDark,
-                                  ),
-                                ),
-                                Container(
-                                  decoration: BoxDecoration(
-                                    color: AppColors.hintGrey.withValues(alpha: 0.3),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      IconButton(
-                                        onPressed: _decrementQuantity,
-                                        icon: const Icon(Icons.remove, size: 18),
-                                      ),
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                                        child: Text(
-                                          '$_quantity',
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                      IconButton(
-                                        onPressed: _incrementQuantity,
-                                        icon: const Icon(Icons.add, size: 18),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 24),
-
-                            // Description Section
-                            const Text(
-                              'Description',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textDark,
                               ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              description,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: AppColors.textGrey,
-                                height: 1.5,
+                              Text(
+                                'PKR $price',
+                                style: const TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              // Bottom Action Bar (Price & Add to Cart Button)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, -4),
-                    ),
-                  ],
-                ),
-                child: SafeArea(
-                  top: false,
-                  child: Row(
-                    children: [
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Total Price',
-                            style: TextStyle(fontSize: 12, color: AppColors.textGrey),
+                            ],
                           ),
-                          Text(
-                            '${AppStrings.currencyPrefix}${(price * _quantity).toStringAsFixed(2)}',
-                            style: AppTextStyles.productPrice.copyWith(
-                              fontSize: 20,
+
+                          const SizedBox(height: 12),
+
+                          const Row(
+                            children: [
+                              Icon(
+                                Icons.star,
+                                color: Colors.amber,
+                                size: 18,
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                '4.8',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                '(120 reviews)',
+                                style: TextStyle(
+                                  color: AppColors.textGrey,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 24),
+
+                          const Text(
+                            'Description',
+                            style: TextStyle(
+                              fontSize: 16,
                               fontWeight: FontWeight.bold,
                               color: AppColors.primaryDark,
                             ),
                           ),
+                          const SizedBox(height: 8),
+                          Text(
+                            description,
+                            style: const TextStyle(
+                              color: AppColors.textGrey,
+                              fontSize: 14,
+                              height: 1.5,
+                            ),
+                          ),
+
+                          const SizedBox(height: 24),
+
+                          QuantitySelector(
+                            initialQuantity: _selectedQuantity,
+                            onChanged: (newQuantity) {
+                              setState(() {
+                                _selectedQuantity = newQuantity;
+                              });
+                            },
+                          ),
+
+                          const SizedBox(height: 100),
                         ],
                       ),
-                      const SizedBox(width: 20),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () => _addToCart(name, price),
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            backgroundColor: AppColors.primaryDark,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                          ),
-                          child: const Text(
-                            'Add to Cart',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
+              ],
+            );
+          },
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Container(
+          padding: const EdgeInsets.all(16.0),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, -4),
               ),
             ],
-          );
-        },
+          ),
+          child: ElevatedButton(
+            onPressed: () async {
+              final docSnapshot = await FirebaseFirestore.instance
+                  .collection(AppStrings.productsCollection)
+                  .doc(widget.productId)
+                  .get();
+
+              if (!docSnapshot.exists) return;
+              final data = docSnapshot.data() as Map<String, dynamic>;
+
+              await _cartService.addToCart(
+                userId: 'mock_user_id',
+                productId: widget.productId,
+                name: data[AppStrings.nameField] ?? AppStrings.defaultProductName,
+                price: data[AppStrings.priceField] ?? 0,
+                imageUrl: data[AppStrings.imageUrlField] ?? '',
+                quantity: _selectedQuantity,
+              );
+
+              if (!mounted) return;
+
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CartScreen(userId: 'mock_user_id'),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryDark,
+              minimumSize: const Size(double.infinity, 54),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              elevation: 0,
+            ),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.shopping_bag_outlined, color: Colors.white),
+                SizedBox(width: 8),
+                Text(
+                  'Add to Cart',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -85,80 +85,82 @@ class _RegisterState extends State<Register> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.offWhite,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            const GradientHeader(height: 180, logoSize: 50),
-            Transform.translate(
-              offset: const Offset(0, 50),
-              child: AuthCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    const Text(
-                      AppStrings.createAccount,
-                      style: AppTextStyles.heading,
-                    ),
-                    const SizedBox(height: 25),
-
-                    AuthTextField(
-                      label: AppStrings.userNameLabel,
-                      controller: _nameController,
-                      icon: Icons.person_outline,
-                    ),
-                    AuthTextField(
-                      label: AppStrings.emailLabel,
-                      controller: _emailController,
-                      icon: Icons.email_outlined,
-                      keyboardType: TextInputType.emailAddress,
-                    ),
-                    AuthTextField(
-                      label: AppStrings.passwordLabel,
-                      controller: _passwordController,
-                      icon: Icons.lock_outline,
-                      isPassword: true,
-                    ),
-
-                    const SizedBox(height: 10),
-                    SizedBox(
-                      width: double.infinity,
-                      child: PillButton(
-                        text: AppStrings.registerNow,
-                        backgroundColor: AppColors.secondaryDark,
-                        textStyle: AppTextStyles.buttonTextWhite,
-                        isLoading: _isLoading,
-                        onPressed: _handleRegister,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              const GradientHeader(height: 150, logoSize: 50),
+              Transform.translate(
+                offset: const Offset(0, 50),
+                child: AuthCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const Text(
+                        AppStrings.createAccount,
+                        style: AppTextStyles.heading,
                       ),
-                    ),
+                      const SizedBox(height: 25),
 
-                    const SizedBox(height: 25),
-                    const Center(
-                      child: Text(
-                        AppStrings.orRegisterSocial,
-                        style: AppTextStyles.footerText,
+                      AuthTextField(
+                        label: AppStrings.userNameLabel,
+                        controller: _nameController,
+                        icon: Icons.person_outline,
                       ),
-                    ),
-                    const SizedBox(height: 15),
-                    const SocialIconsRow(),
-                  ],
+                      AuthTextField(
+                        label: AppStrings.emailLabel,
+                        controller: _emailController,
+                        icon: Icons.email_outlined,
+                        keyboardType: TextInputType.emailAddress,
+                      ),
+                      AuthTextField(
+                        label: AppStrings.passwordLabel,
+                        controller: _passwordController,
+                        icon: Icons.lock_outline,
+                        isPassword: true,
+                      ),
+
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        width: double.infinity,
+                        child: PillButton(
+                          text: AppStrings.registerNow,
+                          backgroundColor: AppColors.secondaryDark,
+                          textStyle: AppTextStyles.buttonTextWhite,
+                          isLoading: _isLoading,
+                          onPressed: _handleRegister,
+                        ),
+                      ),
+
+                      const SizedBox(height: 25),
+                      const Center(
+                        child: Text(
+                          AppStrings.orRegisterSocial,
+                          style: AppTextStyles.footerText,
+                        ),
+                      ),
+                      const SizedBox(height: 15),
+                      const SocialIconsRow(),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 15),
-            Padding(
-              padding: const EdgeInsets.only(top: 50),
-              child: AuthFooterLink(
-                promptText: AppStrings.haveAccount,
-                actionText: AppStrings.login,
-                onTap: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (_) => const Login()),
-                  );
-                },
+              const SizedBox(height: 15),
+              Padding(
+                padding: const EdgeInsets.only(top: 50),
+                child: AuthFooterLink(
+                  promptText: AppStrings.haveAccount,
+                  actionText: AppStrings.login,
+                  onTap: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => const Login()),
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

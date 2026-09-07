@@ -64,3 +64,4 @@ build/
 
 # Sensitive files
 .env
+lib/firebase_options.dart

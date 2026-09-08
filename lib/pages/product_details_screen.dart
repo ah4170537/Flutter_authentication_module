@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Add Firebase Auth import
 import 'package:flutter/material.dart';
 
 import '../constants/app_strings.dart';
@@ -24,7 +25,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
   @override
   void initState() {
-    super.initState(); // Must always be called first
+    super.initState();
     _productStream = FirebaseFirestore.instance
         .collection(AppStrings.productsCollection)
         .doc(widget.productId)
@@ -239,6 +240,17 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           ),
           child: ElevatedButton(
             onPressed: () async {
+              // Get the actual current user ID dynamically
+              final User? user = FirebaseAuth.instance.currentUser;
+              final String userId = user?.uid ?? '';
+
+              if (userId.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Error: User not logged in')),
+                );
+                return;
+              }
+
               final docSnapshot = await FirebaseFirestore.instance
                   .collection(AppStrings.productsCollection)
                   .doc(widget.productId)
@@ -248,7 +260,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               final data = docSnapshot.data() as Map<String, dynamic>;
 
               await _cartService.addToCart(
-                userId: 'mock_user_id',
+                userId: userId, // Pass real userId
                 productId: widget.productId,
                 name: data[AppStrings.nameField] ?? AppStrings.defaultProductName,
                 price: data[AppStrings.priceField] ?? 0,
@@ -261,7 +273,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => CartScreen(userId: 'mock_user_id'),
+                  builder: (context) => CartScreen(userId: userId), // Pass real userId
                 ),
               );
             },

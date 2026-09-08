@@ -8,7 +8,6 @@ import 'pages/welcome.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 2. Load the .env file before initializing Firebase or running the app
   await dotenv.load(fileName: ".env");
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);

@@ -6,6 +6,7 @@ import '../pages/product_details_screen.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import 'product_card.dart';
+import '../pages/see_all_products_screen.dart';
 
 // Generic Horizontal Carousel Builder
 class ProductHorizontalSection extends StatelessWidget {
@@ -40,9 +41,19 @@ class ProductHorizontalSection extends StatelessWidget {
                 ),
               ),
               TextButton(
-                onPressed: onSeeAllPressed ?? () {},
+                onPressed: onSeeAllPressed ?? () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => SeeAllProductsScreen(
+                        categoryTitle: title,
+                        categoryKey: categoryFilter,
+                      ),
+                    ),
+                  );
+                },
                 child: const Text('See All'),
-              ),
+              )
             ],
           ),
         ),

@@ -58,6 +58,16 @@ class CartService {
     await _cartRef(userId).doc(productId).delete();
   }
 
+  // Clear entire cart (Used after completing checkout)
+  Future<void> clearCart(String userId) async {
+    final snapshots = await _cartRef(userId).get();
+    final batch = _firestore.batch();
+    for (var doc in snapshots.docs) {
+      batch.delete(doc.reference);
+    }
+    await batch.commit();
+  }
+
   // Stream cart items for real-time UI updates
   Stream<QuerySnapshot<Map<String, dynamic>>> getCartStream(String userId) {
     return _cartRef(userId).orderBy('updatedAt', descending: true).snapshots();

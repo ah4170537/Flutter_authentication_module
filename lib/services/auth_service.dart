@@ -16,7 +16,7 @@ class AuthService {
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
   // EmailJS Credentials
-  static const String _emailJsServiceId = 'service_ooo5xze';
+  static const String _emailJsServiceId = 'service_yay9k69';
   static const String _emailJsTemplateId = 'template_n4ykzgf';
   static const String _emailJsPublicKey = 'xLJyWo6CV8LvFq26t';
 

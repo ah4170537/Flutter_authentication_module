@@ -8,7 +8,7 @@ import '../theme/app_text_styles.dart';
 import 'product_card.dart';
 import '../pages/see_all_products_screen.dart';
 
-// Generic Horizontal Carousel Builder
+
 class ProductHorizontalSection extends StatelessWidget {
   final String title;
   final String categoryFilter;
@@ -68,7 +68,7 @@ class ProductHorizontalSection extends StatelessWidget {
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const SizedBox(
-                height: 170,
+                height: 220,
                 child: Center(
                   child: CircularProgressIndicator(color: AppColors.primaryDark),
                 ),
@@ -98,7 +98,7 @@ class ProductHorizontalSection extends StatelessWidget {
             }
 
             return SizedBox(
-              height: 175,
+              height: 225,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 14.0),
@@ -136,7 +136,7 @@ class ProductHorizontalSection extends StatelessWidget {
   }
 }
 
-// Dedicated Popular Section
+
 class PopularProductsSection extends StatelessWidget {
   const PopularProductsSection({super.key});
 

@@ -14,6 +14,8 @@ import 'cart_screen.dart';
 import 'login.dart';
 import 'product_details_screen.dart';
 import 'see_all_products_screen.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+
 
 class Dashboard extends StatelessWidget {
   const Dashboard({super.key});
@@ -60,7 +62,7 @@ class Dashboard extends StatelessWidget {
                     padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
                     child: Column(
                       children: [
-                        // Top Row: User Avatar/Name & Actions (Cart, Orders & Logout)
+                       
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -191,7 +193,7 @@ class Dashboard extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      AppStrings.appTitle,
+                      AppStrings.brandName,
                       style: AppTextStyles.brandTitle.copyWith(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -199,19 +201,19 @@ class Dashboard extends StatelessWidget {
                       ),
                     ),
                     TextButton(
-  onPressed: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const SeeAllProductsScreen(
-          categoryTitle: 'Featured Products',
-          categoryKey: AppStrings.featuredCategory,
-        ),
-      ),
-    );
-  },
-  child: const Text('See All'),
-)
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const SeeAllProductsScreen(
+                              categoryTitle: 'Featured Products',
+                              categoryKey: AppStrings.featuredCategory,
+                            ),
+                          ),
+                        );
+                      },
+                      child: const Text('See All'),
+                    )
                   ],
                 ),
               ),
@@ -310,12 +312,24 @@ class Dashboard extends StatelessWidget {
                             child: Stack(
                               children: [
                                 Positioned.fill(
-                                  child: Image.network(
-                                    imageUrl,
+                                  child: CachedNetworkImage(
+                                    imageUrl: imageUrl,
                                     fit: BoxFit.cover,
-                                    errorBuilder:
-                                        (context, error, stackTrace) =>
-                                            Container(
+                                    memCacheWidth: 400,
+                                    placeholder: (context, url) => Container(
+                                      color: AppColors.hintGrey,
+                                      child: const Center(
+                                        child: SizedBox(
+                                          width: 24,
+                                          height: 24,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: AppColors.primaryDark,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    errorWidget: (context, url, error) => Container(
                                       color: AppColors.hintGrey,
                                       child: const Icon(
                                         Icons.image_not_supported,

@@ -2,7 +2,7 @@
 class AppStrings {
   AppStrings._();
 
-  static const String brandName = "Xtreme System Solutions";
+  static const String brandName = "Cartify";
 
   // Welcome screen
   static const String login = "Login";
@@ -51,7 +51,6 @@ class AppStrings {
   static const String resetPassword = "Reset Password";
 
   // Dashboard screen
-  static const String appTitle = 'Ahmads Shop';
   static const String hi = 'Hi, ';
   static const String userFallback = 'User';
   static const String featuredCategory = 'featured';

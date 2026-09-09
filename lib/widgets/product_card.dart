@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../constants/app_strings.dart';
 import '../theme/app_colors.dart';
@@ -41,11 +42,17 @@ class ProductCard extends StatelessWidget {
             Expanded(
               child: ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                child: Image.network(
-                  imageUrl,
+                child: CachedNetworkImage(
+                  imageUrl: imageUrl,
                   width: double.infinity,
+                  memCacheHeight: 400,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
+                  memCacheWidth: 400, // Forces downscaling to speed up decoding
+                  fadeInDuration: const Duration(milliseconds: 100),
+                  placeholder: (context, url) => Container(
+                    color: AppColors.hintGrey,
+                  ),
+                  errorWidget: (context, url, error) => Container(
                     color: AppColors.hintGrey,
                     child: const Icon(
                       Icons.image_not_supported,

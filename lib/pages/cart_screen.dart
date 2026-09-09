@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import '../services/cart_service.dart';
 import '../theme/app_colors.dart';
-import 'checkout_screen.dart'; // Make sure this points to your new checkout screen file
+import 'checkout_screen.dart';
 
 class CartScreen extends StatefulWidget {
   final String userId;
@@ -74,7 +75,6 @@ class _CartScreenState extends State<CartScreen> {
             );
           }
 
-          // Calculate subtotal AND build the cart items list to pass to checkout
           double subtotal = 0.0;
           List<Map<String, dynamic>> cartItems = [];
 
@@ -94,7 +94,7 @@ class _CartScreenState extends State<CartScreen> {
             });
           }
 
-          const double deliveryFee = 5.0;
+          const double deliveryFee = 300.0;
           double total = subtotal + deliveryFee;
 
           return Column(
@@ -122,20 +122,35 @@ class _CartScreenState extends State<CartScreen> {
                       ),
                       child: Row(
                         children: [
+                          // Cached Network Image Implementation
                           ClipRRect(
                             borderRadius: BorderRadius.circular(12),
-                            child: Image.network(
-                              imageUrl,
+                            child: CachedNetworkImage(
+                              imageUrl: imageUrl,
                               width: 70,
                               height: 70,
                               fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  Container(
+                              placeholder: (context, url) => Container(
+                                width: 70,
+                                height: 70,
+                                color: Colors.grey.shade200,
+                                child: const Center(
+                                  child: SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: AppColors.primaryDark,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              errorWidget: (context, url, error) => Container(
                                 width: 70,
                                 height: 70,
                                 color: Colors.grey.shade200,
                                 child: const Icon(
-                                  Icons.image,
+                                  Icons.image_not_supported,
                                   color: Colors.grey,
                                 ),
                               ),
@@ -179,9 +194,7 @@ class _CartScreenState extends State<CartScreen> {
                                         padding: const EdgeInsets.all(4),
                                         decoration: BoxDecoration(
                                           color: Colors.white,
-                                          borderRadius: BorderRadius.circular(
-                                            6,
-                                          ),
+                                          borderRadius: BorderRadius.circular(6),
                                           border: Border.all(
                                             color: Colors.grey.shade300,
                                           ),
@@ -214,9 +227,7 @@ class _CartScreenState extends State<CartScreen> {
                                         padding: const EdgeInsets.all(4),
                                         decoration: BoxDecoration(
                                           color: Colors.white,
-                                          borderRadius: BorderRadius.circular(
-                                            6,
-                                          ),
+                                          borderRadius: BorderRadius.circular(6),
                                           border: Border.all(
                                             color: Colors.grey.shade300,
                                           ),
@@ -315,7 +326,6 @@ class _CartScreenState extends State<CartScreen> {
                       const SizedBox(height: 20),
                       ElevatedButton(
                         onPressed: () {
-                          // Passes the pre-calculated details directly to checkout
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -325,9 +335,8 @@ class _CartScreenState extends State<CartScreen> {
                                 deliveryFee: deliveryFee,
                                 cartItems: cartItems,
                                 onOrderCompleted: () async {
-  // Clear the cart in Firestore so the stream updates and empties the UI
-  await _cartService.clearCart(widget.userId); 
-},
+                                  await _cartService.clearCart(widget.userId);
+                                },
                               ),
                             ),
                           );

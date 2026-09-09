@@ -1,5 +1,6 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Add Firebase Auth import
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../constants/app_strings.dart';
@@ -87,10 +88,14 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     ),
                   ),
                   flexibleSpace: FlexibleSpaceBar(
-                    background: Image.network(
-                      imageUrl,
+                    background: CachedNetworkImage(
+                      imageUrl: imageUrl,
                       fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) => Container(
+                      fadeInDuration: const Duration(milliseconds: 100),
+                      placeholder: (context, url) => Container(
+                        color: AppColors.hintGrey,
+                      ),
+                      errorWidget: (context, url, error) => Container(
                         color: AppColors.hintGrey,
                         child: const Icon(
                           Icons.image_not_supported,
@@ -240,7 +245,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           ),
           child: ElevatedButton(
             onPressed: () async {
-              // Get the actual current user ID dynamically
               final User? user = FirebaseAuth.instance.currentUser;
               final String userId = user?.uid ?? '';
 
@@ -260,7 +264,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               final data = docSnapshot.data() as Map<String, dynamic>;
 
               await _cartService.addToCart(
-                userId: userId, // Pass real userId
+                userId: userId,
                 productId: widget.productId,
                 name: data[AppStrings.nameField] ?? AppStrings.defaultProductName,
                 price: data[AppStrings.priceField] ?? 0,
@@ -273,7 +277,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => CartScreen(userId: userId), // Pass real userId
+                  builder: (context) => CartScreen(userId: userId),
                 ),
               );
             },

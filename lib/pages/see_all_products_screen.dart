@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
@@ -138,10 +139,13 @@ class SeeAllProductsScreen extends StatelessWidget {
                           child: Stack(
                             children: [
                               Positioned.fill(
-                                child: Image.network(
-                                  imageUrl,
+                                child: CachedNetworkImage(
+                                  imageUrl: imageUrl,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) => Container(
+                                  placeholder: (context, url) => Container(
+                                    color: AppColors.hintGrey,
+                                  ),
+                                  errorWidget: (context, url, error) => Container(
                                     color: AppColors.hintGrey,
                                     child: const Icon(
                                       Icons.image_not_supported,

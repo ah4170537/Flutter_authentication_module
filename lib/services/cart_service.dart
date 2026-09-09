@@ -3,12 +3,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class CartService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Reference to user's cart subcollection
+
   CollectionReference<Map<String, dynamic>> _cartRef(String userId) {
     return _firestore.collection('users').doc(userId).collection('cart');
   }
 
-  // Add or increment item in cart
+
   Future<void> addToCart({
     required String userId,
     required String productId,
@@ -21,7 +21,7 @@ class CartService {
     
     final docSnap = await docRef.get();
     if (docSnap.exists) {
-      // If item already exists, increment its quantity atomically
+
       final currentQuantity = docSnap.data()?['quantity'] ?? 1;
       await docRef.update({'quantity': currentQuantity + quantity});
     } else {
@@ -37,7 +37,7 @@ class CartService {
     }
   }
 
-  // Update item quantity (Plus / Minus)
+
   Future<void> updateQuantity({
     required String userId,
     required String productId,
@@ -50,7 +50,7 @@ class CartService {
     }
   }
 
-  // Remove single item
+
   Future<void> removeFromCart({
     required String userId,
     required String productId,
@@ -68,7 +68,6 @@ class CartService {
     await batch.commit();
   }
 
-  // Stream cart items for real-time UI updates
   Stream<QuerySnapshot<Map<String, dynamic>>> getCartStream(String userId) {
     return _cartRef(userId).orderBy('updatedAt', descending: true).snapshots();
   }

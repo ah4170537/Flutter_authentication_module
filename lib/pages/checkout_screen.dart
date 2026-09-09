@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../services/order_service.dart';
 import '../theme/app_colors.dart';
+import 'dashboard.dart';
 
 class CheckoutScreen extends StatefulWidget {
   final String userId;
   final double subtotal;
   final double deliveryFee;
   final List<Map<String, dynamic>> cartItems;
-  final VoidCallback? onOrderCompleted; // Added callback
+  final VoidCallback? onOrderCompleted;
 
   const CheckoutScreen({
     super.key,
@@ -16,7 +18,7 @@ class CheckoutScreen extends StatefulWidget {
     required this.subtotal,
     required this.deliveryFee,
     required this.cartItems,
-    this.onOrderCompleted, // Added to constructor
+    this.onOrderCompleted,
   });
 
   @override
@@ -46,14 +48,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   Future<void> _loadSavedCheckoutInfo() async {
     final prefs = await SharedPreferences.getInstance();
+    final prefix = 'checkout_${widget.userId}_';
     setState(() {
-      _firstNameController.text = prefs.getString('checkout_first_name') ?? '';
-      _lastNameController.text = prefs.getString('checkout_last_name') ?? '';
-      _emailController.text = prefs.getString('checkout_email') ?? '';
-      _phoneController.text = prefs.getString('checkout_phone') ?? '';
-      _secondaryPhoneController.text = prefs.getString('checkout_sec_phone') ?? '';
-      _postalCodeController.text = prefs.getString('checkout_postal') ?? '';
-      _addressController.text = prefs.getString('checkout_address') ?? '';
+      _firstNameController.text = prefs.getString('${prefix}first_name') ?? '';
+      _lastNameController.text = prefs.getString('${prefix}last_name') ?? '';
+      _emailController.text = prefs.getString('${prefix}email') ?? '';
+      _phoneController.text = prefs.getString('${prefix}phone') ?? '';
+      _secondaryPhoneController.text =
+          prefs.getString('${prefix}sec_phone') ?? '';
+      _postalCodeController.text = prefs.getString('${prefix}postal') ?? '';
+      _addressController.text = prefs.getString('${prefix}address') ?? '';
     });
   }
 
@@ -64,13 +68,26 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     if (_saveInfo) {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('checkout_first_name', _firstNameController.text.trim());
-      await prefs.setString('checkout_last_name', _lastNameController.text.trim());
-      await prefs.setString('checkout_email', _emailController.text.trim());
-      await prefs.setString('checkout_phone', _phoneController.text.trim());
-      await prefs.setString('checkout_sec_phone', _secondaryPhoneController.text.trim());
-      await prefs.setString('checkout_postal', _postalCodeController.text.trim());
-      await prefs.setString('checkout_address', _addressController.text.trim());
+      final prefix = 'checkout_${widget.userId}_';
+      await prefs.setString(
+        '${prefix}first_name',
+        _firstNameController.text.trim(),
+      );
+      await prefs.setString(
+        '${prefix}last_name',
+        _lastNameController.text.trim(),
+      );
+      await prefs.setString('${prefix}email', _emailController.text.trim());
+      await prefs.setString('${prefix}phone', _phoneController.text.trim());
+      await prefs.setString(
+        '${prefix}sec_phone',
+        _secondaryPhoneController.text.trim(),
+      );
+      await prefs.setString(
+        '${prefix}postal',
+        _postalCodeController.text.trim(),
+      );
+      await prefs.setString('${prefix}address', _addressController.text.trim());
     }
 
     try {
@@ -89,27 +106,36 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         deliveryFee: widget.deliveryFee,
       );
 
-      // Trigger the cart clearing callback on the previous screen
       widget.onOrderCompleted?.call();
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Order placed successfully & confirmation email sent!'),
+          content: const Text(
+            'Order placed successfully & confirmation email sent!',
+          ),
           backgroundColor: Colors.green.shade700,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       );
 
-      Navigator.pop(context);
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const Dashboard()),
+        (route) => false,
+      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to place order: $e'),
           backgroundColor: Colors.red.shade700,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       );
     } finally {
@@ -201,7 +227,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   children: [
                     const Row(
                       children: [
-                        Icon(Icons.local_shipping_outlined, color: AppColors.primaryDark, size: 22),
+                        Icon(
+                          Icons.local_shipping_outlined,
+                          color: AppColors.primaryDark,
+                          size: 22,
+                        ),
                         SizedBox(width: 8),
                         Text(
                           'Shipping Information',
@@ -219,16 +249,24 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         Expanded(
                           child: TextFormField(
                             controller: _firstNameController,
-                            decoration: _buildInputDecoration('First Name', Icons.person_outline),
-                            validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                            decoration: _buildInputDecoration(
+                              'First Name',
+                              Icons.person_outline,
+                            ),
+                            validator: (v) =>
+                                v == null || v.isEmpty ? 'Required' : null,
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: TextFormField(
                             controller: _lastNameController,
-                            decoration: _buildInputDecoration('Last Name', Icons.person_outline),
-                            validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                            decoration: _buildInputDecoration(
+                              'Last Name',
+                              Icons.person_outline,
+                            ),
+                            validator: (v) =>
+                                v == null || v.isEmpty ? 'Required' : null,
                           ),
                         ),
                       ],
@@ -237,21 +275,33 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     TextFormField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
-                      decoration: _buildInputDecoration('Email Address', Icons.email_outlined),
-                      validator: (v) => v == null || !v.contains('@') ? 'Enter a valid email' : null,
+                      decoration: _buildInputDecoration(
+                        'Email Address',
+                        Icons.email_outlined,
+                      ),
+                      validator: (v) => v == null || !v.contains('@')
+                          ? 'Enter a valid email'
+                          : null,
                     ),
                     const SizedBox(height: 14),
                     TextFormField(
                       controller: _phoneController,
                       keyboardType: TextInputType.phone,
-                      decoration: _buildInputDecoration('Primary Phone Number', Icons.phone_outlined),
-                      validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                      decoration: _buildInputDecoration(
+                        'Primary Phone Number',
+                        Icons.phone_outlined,
+                      ),
+                      validator: (v) =>
+                          v == null || v.isEmpty ? 'Required' : null,
                     ),
                     const SizedBox(height: 14),
                     TextFormField(
                       controller: _secondaryPhoneController,
                       keyboardType: TextInputType.phone,
-                      decoration: _buildInputDecoration('Secondary Phone (Optional)', Icons.phone_android_outlined),
+                      decoration: _buildInputDecoration(
+                        'Secondary Phone (Optional)',
+                        Icons.phone_android_outlined,
+                      ),
                     ),
                     const SizedBox(height: 14),
                     Row(
@@ -260,8 +310,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           flex: 2,
                           child: TextFormField(
                             controller: _addressController,
-                            decoration: _buildInputDecoration('Street Address', Icons.home_outlined),
-                            validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                            decoration: _buildInputDecoration(
+                              'Street Address',
+                              Icons.home_outlined,
+                            ),
+                            validator: (v) =>
+                                v == null || v.isEmpty ? 'Required' : null,
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -270,8 +324,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           child: TextFormField(
                             controller: _postalCodeController,
                             keyboardType: TextInputType.number,
-                            decoration: _buildInputDecoration('Postal Code', Icons.local_post_office_outlined),
-                            validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                            decoration: _buildInputDecoration(
+                              'Postal Code',
+                              Icons.local_post_office_outlined,
+                            ),
+                            validator: (v) =>
+                                v == null || v.isEmpty ? 'Required' : null,
                           ),
                         ),
                       ],
@@ -298,7 +356,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   children: [
                     const Row(
                       children: [
-                        Icon(Icons.payment_outlined, color: AppColors.primaryDark, size: 22),
+                        Icon(
+                          Icons.payment_outlined,
+                          color: AppColors.primaryDark,
+                          size: 22,
+                        ),
                         SizedBox(width: 8),
                         Text(
                           'Payment & Delivery',
@@ -318,22 +380,36 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         color: Colors.grey.shade50,
                       ),
                       child: RadioListTile<String>(
-                        title: const Text('Cash on Delivery (COD)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                        subtitle: const Text('Pay with cash upon delivery', style: TextStyle(fontSize: 12)),
+                        title: const Text(
+                          'Cash on Delivery (COD)',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
+                        subtitle: const Text(
+                          'Pay with cash upon delivery',
+                          style: TextStyle(fontSize: 12),
+                        ),
                         value: 'Cash on Delivery',
                         activeColor: AppColors.primaryDark,
                         groupValue: _selectedDeliveryMode,
-                        onChanged: (val) => setState(() => _selectedDeliveryMode = val!),
+                        onChanged: (val) =>
+                            setState(() => _selectedDeliveryMode = val!),
                       ),
                     ),
                     const SizedBox(height: 8),
                     CheckboxListTile(
-                      title: const Text('Save this information for next time', style: TextStyle(fontSize: 13, color: Colors.black87)),
+                      title: const Text(
+                        'Save this information for next time',
+                        style: TextStyle(fontSize: 13, color: Colors.black87),
+                      ),
                       value: _saveInfo,
                       activeColor: AppColors.primaryDark,
                       controlAffinity: ListTileControlAffinity.leading,
                       contentPadding: EdgeInsets.zero,
-                      onChanged: (val) => setState(() => _saveInfo = val ?? false),
+                      onChanged: (val) =>
+                          setState(() => _saveInfo = val ?? false),
                     ),
                   ],
                 ),
@@ -357,16 +433,28 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Subtotal', style: TextStyle(color: Colors.grey)),
-                        Text('PKR ${widget.subtotal.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.w600)),
+                        const Text(
+                          'Subtotal',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                        Text(
+                          'PKR ${widget.subtotal.toStringAsFixed(2)}',
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 10),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Delivery Fee', style: TextStyle(color: Colors.grey)),
-                        Text('PKR ${widget.deliveryFee.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.w600)),
+                        const Text(
+                          'Delivery Fee',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                        Text(
+                          'PKR ${widget.deliveryFee.toStringAsFixed(2)}',
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
                       ],
                     ),
                     const Padding(
@@ -376,8 +464,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Total Amount', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.primaryDark)),
-                        Text('PKR ${total.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.green)),
+                        const Text(
+                          'Total Amount',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: AppColors.primaryDark,
+                          ),
+                        ),
+                        Text(
+                          'PKR ${total.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            color: Colors.green,
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -408,18 +510,27 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryDark,
                 elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
               onPressed: _isLoading ? null : _handleCheckout,
               child: _isLoading
                   ? const SizedBox(
                       width: 24,
                       height: 24,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2.5,
+                      ),
                     )
                   : const Text(
                       'Place Order',
-                      style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
             ),
           ),

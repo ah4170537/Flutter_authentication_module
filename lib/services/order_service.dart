@@ -9,7 +9,7 @@ class OrderService {
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  static const String _emailJsServiceId = 'service_yay9k69';
+  static const String _emailJsServiceId = 'service_3a778zs';
   static const String _emailJsTemplateId = 'template_elx7tm7';
   static const String _emailJsPublicKey = 'xLJyWo6CV8LvFq26t';
 
@@ -30,7 +30,6 @@ class OrderService {
     final total = subtotal + deliveryFee;
     final trimmedEmail = email.trim().toLowerCase();
     final fullName = '${firstName.trim()} ${lastName.trim()}';
-
 
     await _firestore.collection('orders').add({
       'userId': userId,

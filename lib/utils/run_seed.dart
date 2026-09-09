@@ -5,7 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter/widgets.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart'; // 1. Import dotenv
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 
 import '../firebase_options.dart';
@@ -13,10 +13,10 @@ import '../firebase_options.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 2. Load the .env file first so variables are available
+ 
   await dotenv.load(fileName: ".env");
 
-  // 3. Retrieve the key safely inside main
+ 
   final String? imgBbApiKey = dotenv.env['IMGBB_API_KEY'];
 
   if (imgBbApiKey == null || imgBbApiKey.isEmpty) {

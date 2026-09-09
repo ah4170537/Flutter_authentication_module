@@ -3,11 +3,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class CartService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-
+  // Root collection 'cart' -> {userId} -> 'user_cart' -> {productId}
   CollectionReference<Map<String, dynamic>> _cartRef(String userId) {
-    return _firestore.collection('users').doc(userId).collection('cart');
+    return _firestore.collection('cart').doc(userId).collection('user_cart');
   }
-
 
   Future<void> addToCart({
     required String userId,
@@ -21,11 +20,9 @@ class CartService {
     
     final docSnap = await docRef.get();
     if (docSnap.exists) {
-
       final currentQuantity = docSnap.data()?['quantity'] ?? 1;
       await docRef.update({'quantity': currentQuantity + quantity});
     } else {
-      // Otherwise, create a new cart entry
       await docRef.set({
         'productId': productId,
         'name': name,
@@ -36,7 +33,6 @@ class CartService {
       });
     }
   }
-
 
   Future<void> updateQuantity({
     required String userId,
@@ -49,7 +45,6 @@ class CartService {
       await _cartRef(userId).doc(productId).update({'quantity': newQuantity});
     }
   }
-
 
   Future<void> removeFromCart({
     required String userId,

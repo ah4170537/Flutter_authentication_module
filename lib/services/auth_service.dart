@@ -38,7 +38,7 @@ class AuthService {
       // 1. Update Firebase Auth Display Name
       await credential.user!.updateDisplayName(trimmedName);
 
-      // 2. Save user document in Firestore
+      // 2. Save user document in Firestore matching the new schema
       try {
         await _firestore.collection('users').doc(credential.user!.uid).set({
           'uid': credential.user!.uid,
@@ -78,6 +78,33 @@ class AuthService {
     } catch (e) {
       return false;
     }
+  }
+
+  /// Save or update user checkout details under their user document subcollection
+  Future<void> saveCheckoutDetails({
+    required String userId,
+    required Map<String, dynamic> checkoutData,
+  }) async {
+    await _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('checkout_details')
+        .doc('saved_info')
+        .set({
+      ...checkoutData,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  /// Fetch saved checkout details for pre-filling the checkout page
+  Future<Map<String, dynamic>?> getCheckoutDetails(String userId) async {
+    final doc = await _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('checkout_details')
+        .doc('saved_info')
+        .get();
+    return doc.exists ? doc.data() : null;
   }
 
   Future<void> sendEmailOtp(String email) async {

@@ -31,7 +31,15 @@ class OrderService {
     final trimmedEmail = email.trim().toLowerCase();
     final fullName = '${firstName.trim()} ${lastName.trim()}';
 
-    await _firestore.collection('orders').add({
+    // Save order inside orders -> {userId} -> user_orders subcollection
+    final orderRef = _firestore
+        .collection('orders')
+        .doc(userId)
+        .collection('user_orders')
+        .doc();
+
+    await orderRef.set({
+      'orderId': orderRef.id,
       'userId': userId,
       'firstName': firstName.trim(),
       'lastName': lastName.trim(),
@@ -48,6 +56,19 @@ class OrderService {
       'createdAt': FieldValue.serverTimestamp(),
     });
 
+    // Clear user's cart items from the root 'cart' collection
+    final cartSnapshots = await _firestore
+        .collection('cart')
+        .doc(userId)
+        .collection('user_cart')
+        .get();
+
+    final batch = _firestore.batch();
+    for (var doc in cartSnapshots.docs) {
+      batch.delete(doc.reference);
+    }
+    await batch.commit();
+
     String formattedItems = cartItems
         .map((item) {
           final name = item['name'] ?? 'Product';
@@ -57,7 +78,7 @@ class OrderService {
         })
         .join('\n');
 
-    // 3. Send Email via EmailJS
+    // Send Email via EmailJS
     final url = Uri.parse('https://api.emailjs.com/api/v1.0/email/send');
     final response = await http.post(
       url,

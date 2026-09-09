@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/order_service.dart';
 import '../theme/app_colors.dart';
@@ -36,59 +35,19 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final _postalCodeController = TextEditingController();
   final _addressController = TextEditingController();
 
+
   String _selectedDeliveryMode = 'Cash on Delivery';
-  bool _saveInfo = false;
+
   bool _isLoading = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _loadSavedCheckoutInfo();
-  }
 
-  Future<void> _loadSavedCheckoutInfo() async {
-    final prefs = await SharedPreferences.getInstance();
-    final prefix = 'checkout_${widget.userId}_';
-    setState(() {
-      _firstNameController.text = prefs.getString('${prefix}first_name') ?? '';
-      _lastNameController.text = prefs.getString('${prefix}last_name') ?? '';
-      _emailController.text = prefs.getString('${prefix}email') ?? '';
-      _phoneController.text = prefs.getString('${prefix}phone') ?? '';
-      _secondaryPhoneController.text =
-          prefs.getString('${prefix}sec_phone') ?? '';
-      _postalCodeController.text = prefs.getString('${prefix}postal') ?? '';
-      _addressController.text = prefs.getString('${prefix}address') ?? '';
-    });
-  }
 
   Future<void> _handleCheckout() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
 
-    if (_saveInfo) {
-      final prefs = await SharedPreferences.getInstance();
-      final prefix = 'checkout_${widget.userId}_';
-      await prefs.setString(
-        '${prefix}first_name',
-        _firstNameController.text.trim(),
-      );
-      await prefs.setString(
-        '${prefix}last_name',
-        _lastNameController.text.trim(),
-      );
-      await prefs.setString('${prefix}email', _emailController.text.trim());
-      await prefs.setString('${prefix}phone', _phoneController.text.trim());
-      await prefs.setString(
-        '${prefix}sec_phone',
-        _secondaryPhoneController.text.trim(),
-      );
-      await prefs.setString(
-        '${prefix}postal',
-        _postalCodeController.text.trim(),
-      );
-      await prefs.setString('${prefix}address', _addressController.text.trim());
-    }
+
 
     try {
       await OrderService.instance.placeOrder(
@@ -398,20 +357,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             setState(() => _selectedDeliveryMode = val!),
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    CheckboxListTile(
-                      title: const Text(
-                        'Save this information for next time',
-                        style: TextStyle(fontSize: 13, color: Colors.black87),
-                      ),
-                      value: _saveInfo,
-                      activeColor: AppColors.primaryDark,
-                      controlAffinity: ListTileControlAffinity.leading,
-                      contentPadding: EdgeInsets.zero,
-                      onChanged: (val) =>
-                          setState(() => _saveInfo = val ?? false),
-                    ),
                   ],
+
                 ),
               ),
               const SizedBox(height: 16),

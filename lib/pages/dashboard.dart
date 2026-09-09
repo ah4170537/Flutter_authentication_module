@@ -2,6 +2,7 @@ import 'package:carousel_slider_plus/carousel_slider_plus.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+
 import 'orders_screen.dart';
 
 import '../constants/app_strings.dart';
@@ -14,8 +15,8 @@ import 'cart_screen.dart';
 import 'login.dart';
 import 'product_details_screen.dart';
 import 'see_all_products_screen.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
+import 'package:cached_network_image/cached_network_image.dart';
 
 class Dashboard extends StatelessWidget {
   const Dashboard({super.key});
@@ -36,12 +37,212 @@ class Dashboard extends StatelessWidget {
   Widget build(BuildContext context) {
     final User? user = FirebaseAuth.instance.currentUser;
     final String userId = user?.uid ?? '';
-    final String userName = user?.displayName ??
+    final String userName =
+        user?.displayName ??
         user?.email?.split('@').first ??
         AppStrings.userFallback;
+    final String userEmail = user?.email ?? 'No email provided';
 
     return Scaffold(
       backgroundColor: AppColors.white,
+      drawer: Drawer(
+        child: Material(
+          color: AppColors.white,
+          child: Column(
+            children: [
+              SizedBox(
+                width: double.infinity,
+             child:  DrawerHeader(
+                
+                decoration: const BoxDecoration(
+                  gradient: AppGradients.welcomeBackground,
+                  
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircleAvatar(
+                      radius: 28,
+                      backgroundColor: Colors.white.withValues(alpha: 0.2),
+                      child: Text(
+                        userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 22,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      userName,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      userEmail,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.8),
+                        fontSize: 13,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              ),
+              Expanded(
+                child: ListView(
+                  padding: EdgeInsets.zero,
+                  children: [
+                   ListTile(
+                        leading: const Icon(
+                          Icons.dashboard_outlined,
+                          color: AppColors.primaryDark,
+                        ),
+                        title: const Text(
+                          'Dashboard',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textDark,
+                          ),
+                        ),
+                        onTap: () {
+                          Navigator.pop(context);
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(
+                          Icons.receipt_long_rounded,
+                          color: AppColors.primaryDark,
+                        ),
+                        title: const Text(
+                          'My Orders',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textDark,
+                          ),
+                        ),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => OrdersScreen(userId: userId),
+                            ),
+                          );
+                        },
+                      ),
+                      
+                      ListTile(
+                        leading: const Icon(
+                          Icons.person_outline_rounded,
+                          color: AppColors.primaryDark,
+                        ),
+                        title: const Text(
+                          'Profile',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textDark,
+                          ),
+                        ),
+                        onTap: () {
+                          Navigator.pop(context);
+                          // TODO: Navigate to ProfileScreen
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(
+                          Icons.location_on_outlined,
+                          color: AppColors.primaryDark,
+                        ),
+                        title: const Text(
+                          'Shipping Addresses',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textDark,
+                          ),
+                        ),
+                        onTap: () {
+                          Navigator.pop(context);
+                          // TODO: Navigate to AddressesScreen
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(
+                          Icons.settings_outlined,
+                          color: AppColors.primaryDark,
+                        ),
+                        title: const Text(
+                          'Settings',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textDark,
+                          ),
+                        ),
+                        onTap: () {
+                          Navigator.pop(context);
+                          // TODO: Navigate to SettingsScreen
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(
+                          Icons.help_outline_rounded,
+                          color: AppColors.primaryDark,
+                        ),
+                        title: const Text(
+                          'Help & Support',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textDark,
+                          ),
+                        ),
+                        onTap: () {
+                          Navigator.pop(context);
+                          // TODO: Navigate to SupportScreen
+                        },
+                      ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red.shade50,
+                      foregroundColor: Colors.red.shade700,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: () => _logout(context),
+                    icon: const Icon(Icons.logout_rounded, size: 20),
+                    label: const Text(
+                      'Logout',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
@@ -62,16 +263,38 @@ class Dashboard extends StatelessWidget {
                     padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
                     child: Column(
                       children: [
-                       
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Row(
                               children: [
+                                Builder(
+                                  builder: (context) => IconButton(
+                                    onPressed: () {
+                                      Scaffold.of(context).openDrawer();
+                                    },
+                                    icon: Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.2,
+                                        ),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.menu_rounded,
+                                        color: AppColors.white,
+                                        size: 20,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
                                 CircleAvatar(
                                   radius: 22,
-                                  backgroundColor:
-                                      Colors.white.withValues(alpha: 0.2),
+                                  backgroundColor: Colors.white.withValues(
+                                    alpha: 0.2,
+                                  ),
                                   child: Text(
                                     userName.isNotEmpty
                                         ? userName[0].toUpperCase()
@@ -89,8 +312,9 @@ class Dashboard extends StatelessWidget {
                                     Text(
                                       'Welcome back,',
                                       style: TextStyle(
-                                        color: Colors.white
-                                            .withValues(alpha: 0.8),
+                                        color: Colors.white.withValues(
+                                          alpha: 0.8,
+                                        ),
                                         fontSize: 12,
                                       ),
                                     ),
@@ -98,10 +322,10 @@ class Dashboard extends StatelessWidget {
                                       userName,
                                       style: AppTextStyles.headerSubtitle
                                           .copyWith(
-                                        color: AppColors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 18,
-                                      ),
+                                            color: AppColors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 18,
+                                          ),
                                     ),
                                   ],
                                 ),
@@ -122,53 +346,13 @@ class Dashboard extends StatelessWidget {
                                   icon: Container(
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color: Colors.white
-                                          .withValues(alpha: 0.2),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.2,
+                                      ),
                                       shape: BoxShape.circle,
                                     ),
                                     child: const Icon(
                                       Icons.shopping_cart_outlined,
-                                      color: AppColors.white,
-                                      size: 20,
-                                    ),
-                                  ),
-                                ),
-                                IconButton(
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) =>
-                                            OrdersScreen(userId: userId),
-                                      ),
-                                    );
-                                  },
-                                  icon: Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white
-                                          .withValues(alpha: 0.2),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(
-                                      Icons.receipt_long_rounded,
-                                      color: AppColors.white,
-                                      size: 20,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                IconButton(
-                                  onPressed: () => _logout(context),
-                                  icon: Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white
-                                          .withValues(alpha: 0.2),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(
-                                      Icons.logout_rounded,
                                       color: AppColors.white,
                                       size: 20,
                                     ),
@@ -213,7 +397,7 @@ class Dashboard extends StatelessWidget {
                         );
                       },
                       child: const Text('See All'),
-                    )
+                    ),
                   ],
                 ),
               ),
@@ -280,7 +464,7 @@ class Dashboard extends StatelessWidget {
                       final String productId = doc.id;
                       final String name =
                           data[AppStrings.nameField] ??
-                              AppStrings.defaultProductName;
+                          AppStrings.defaultProductName;
                       final num price = data[AppStrings.priceField] ?? 0;
                       final String imageUrl =
                           data[AppStrings.imageUrlField] ?? '';
@@ -290,8 +474,8 @@ class Dashboard extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => ProductDetailsScreen(
-                                  productId: productId),
+                              builder: (_) =>
+                                  ProductDetailsScreen(productId: productId),
                             ),
                           );
                         },
@@ -329,14 +513,15 @@ class Dashboard extends StatelessWidget {
                                         ),
                                       ),
                                     ),
-                                    errorWidget: (context, url, error) => Container(
-                                      color: AppColors.hintGrey,
-                                      child: const Icon(
-                                        Icons.image_not_supported,
-                                        size: 40,
-                                        color: AppColors.textGrey,
-                                      ),
-                                    ),
+                                    errorWidget: (context, url, error) =>
+                                        Container(
+                                          color: AppColors.hintGrey,
+                                          child: const Icon(
+                                            Icons.image_not_supported,
+                                            size: 40,
+                                            color: AppColors.textGrey,
+                                          ),
+                                        ),
                                   ),
                                 ),
                                 Positioned(
@@ -398,10 +583,10 @@ class Dashboard extends StatelessWidget {
                                           name,
                                           style: AppTextStyles.productName
                                               .copyWith(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16,
-                                          ),
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16,
+                                              ),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                         ),
@@ -410,10 +595,10 @@ class Dashboard extends StatelessWidget {
                                           '${AppStrings.currencyPrefix}$price',
                                           style: AppTextStyles.productPrice
                                               .copyWith(
-                                            color: Colors.amberAccent,
-                                            fontWeight: FontWeight.w700,
-                                            fontSize: 15,
-                                          ),
+                                                color: Colors.amberAccent,
+                                                fontWeight: FontWeight.w700,
+                                                fontSize: 15,
+                                              ),
                                         ),
                                       ],
                                     ),

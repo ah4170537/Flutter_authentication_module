@@ -23,6 +23,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   final CartService _cartService = CartService();
   int _selectedQuantity = 1;
   late final Stream<DocumentSnapshot> _productStream;
+  bool _isAddingToCart = false;
 
   @override
   void initState() {
@@ -244,43 +245,68 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             ],
           ),
           child: ElevatedButton(
-            onPressed: () async {
-              final User? user = FirebaseAuth.instance.currentUser;
-              final String userId = user?.uid ?? '';
+            onPressed: _isAddingToCart
+                ? null
+                : () async {
+                    setState(() {
+                      _isAddingToCart = true;
+                    });
 
-              if (userId.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Error: User not logged in')),
-                );
-                return;
-              }
+                    final User? user = FirebaseAuth.instance.currentUser;
+                    final String userId = user?.uid ?? '';
 
-              final docSnapshot = await FirebaseFirestore.instance
-                  .collection(AppStrings.productsCollection)
-                  .doc(widget.productId)
-                  .get();
+                    if (userId.isEmpty) {
+                      if (mounted) {
+                        setState(() {
+                          _isAddingToCart = false;
+                        });
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Error: User not logged in')),
+                        );
+                      }
+                      return;
+                    }
 
-              if (!docSnapshot.exists) return;
-              final data = docSnapshot.data() as Map<String, dynamic>;
+                    final docSnapshot = await FirebaseFirestore.instance
+                        .collection(AppStrings.productsCollection)
+                        .doc(widget.productId)
+                        .get();
 
-              await _cartService.addToCart(
-                userId: userId,
-                productId: widget.productId,
-                name: data[AppStrings.nameField] ?? AppStrings.defaultProductName,
-                price: data[AppStrings.priceField] ?? 0,
-                imageUrl: data[AppStrings.imageUrlField] ?? '',
-                quantity: _selectedQuantity,
-              );
+                    if (!docSnapshot.exists) {
+                      if (mounted) {
+                        setState(() {
+                          _isAddingToCart = false;
+                        });
+                      }
+                      return;
+                    }
 
-              if (!mounted) return;
+                    final data = docSnapshot.data() as Map<String, dynamic>;
 
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => CartScreen(userId: userId),
-                ),
-              );
-            },
+                    await _cartService.addToCart(
+                      userId: userId,
+                      productId: widget.productId,
+                      name: data[AppStrings.nameField] ?? AppStrings.defaultProductName,
+                      price: data[AppStrings.priceField] ?? 0,
+                      imageUrl: data[AppStrings.imageUrlField] ?? '',
+                      quantity: _selectedQuantity,
+                    );
+
+                    if (!mounted) return;
+
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CartScreen(userId: userId),
+                      ),
+                    );
+
+                    if (mounted) {
+                      setState(() {
+                        _isAddingToCart = false;
+                      });
+                    }
+                  },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryDark,
               minimumSize: const Size(double.infinity, 54),
@@ -289,21 +315,30 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               ),
               elevation: 0,
             ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.shopping_bag_outlined, color: Colors.white),
-                SizedBox(width: 8),
-                Text(
-                  'Add to Cart',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+            child: _isAddingToCart
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.shopping_bag_outlined, color: Colors.white),
+                      SizedBox(width: 8),
+                      Text(
+                        'Add to Cart',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            ),
           ),
         ),
       ),

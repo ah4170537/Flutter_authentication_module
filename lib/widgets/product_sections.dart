@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
@@ -8,8 +9,7 @@ import '../theme/app_text_styles.dart';
 import 'product_card.dart';
 import '../pages/see_all_products_screen.dart';
 
-
-class ProductHorizontalSection extends StatelessWidget {
+class ProductHorizontalSection extends StatefulWidget {
   final String title;
   final String categoryFilter;
   final VoidCallback? onSeeAllPressed;
@@ -20,6 +20,58 @@ class ProductHorizontalSection extends StatelessWidget {
     required this.categoryFilter,
     this.onSeeAllPressed,
   });
+
+  @override
+  State<ProductHorizontalSection> createState() => _ProductHorizontalSectionState();
+}
+
+class _ProductHorizontalSectionState extends State<ProductHorizontalSection> {
+  final ScrollController _scrollController = ScrollController();
+  Timer? _timer;
+  bool _isForward = true;
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _startAutoScroll() {
+    if (_timer != null) return;
+
+    _timer = Timer.periodic(const Duration(seconds: 2), (timer) {
+      if (!mounted || !_scrollController.hasClients) return;
+
+      final maxScroll = _scrollController.position.maxScrollExtent;
+      final minScroll = _scrollController.position.minScrollExtent;
+      final currentScroll = _scrollController.offset;
+
+      const scrollStep = 500.0;
+
+      if (_isForward) {
+        if (currentScroll < maxScroll) {
+          _scrollController.animateTo(
+            (currentScroll + scrollStep).clamp(minScroll, maxScroll),
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInOut,
+          );
+        } else {
+          _isForward = false;
+        }
+      } else {
+        if (currentScroll > minScroll) {
+          _scrollController.animateTo(
+            (currentScroll - scrollStep).clamp(minScroll, maxScroll),
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInOut,
+          );
+        } else {
+          _isForward = true;
+        }
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +85,7 @@ class ProductHorizontalSection extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                title,
+                widget.title,
                 style: AppTextStyles.brandTitle.copyWith(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -41,13 +93,13 @@ class ProductHorizontalSection extends StatelessWidget {
                 ),
               ),
               TextButton(
-                onPressed: onSeeAllPressed ?? () {
+                onPressed: widget.onSeeAllPressed ?? () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (_) => SeeAllProductsScreen(
-                        categoryTitle: title,
-                        categoryKey: categoryFilter,
+                        categoryTitle: widget.title,
+                        categoryKey: widget.categoryFilter,
                       ),
                     ),
                   );
@@ -63,7 +115,7 @@ class ProductHorizontalSection extends StatelessWidget {
         StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance
               .collection(AppStrings.productsCollection)
-              .where(AppStrings.categoryField, isEqualTo: categoryFilter)
+              .where(AppStrings.categoryField, isEqualTo: widget.categoryFilter)
               .snapshots(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
@@ -79,7 +131,7 @@ class ProductHorizontalSection extends StatelessWidget {
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: Text(
-                  'Error loading $title',
+                  'Error loading ${widget.title}',
                   style: const TextStyle(color: AppColors.textDark),
                 ),
               );
@@ -91,15 +143,19 @@ class ProductHorizontalSection extends StatelessWidget {
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: Text(
-                  'No $title items found.',
+                  'No ${widget.title} items found.',
                   style: const TextStyle(color: AppColors.textGrey),
                 ),
               );
             }
 
+            // Start auto scrolling once data is loaded
+            _startAutoScroll();
+
             return SizedBox(
               height: 225,
               child: ListView.builder(
+                controller: _scrollController,
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 14.0),
                 itemCount: docs.length,
@@ -135,7 +191,6 @@ class ProductHorizontalSection extends StatelessWidget {
     );
   }
 }
-
 
 class PopularProductsSection extends StatelessWidget {
   const PopularProductsSection({super.key});

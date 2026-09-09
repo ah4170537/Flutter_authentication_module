@@ -17,6 +17,14 @@ class CartScreen extends StatefulWidget {
 
 class _CartScreenState extends State<CartScreen> {
   final CartService _cartService = CartService();
+  late final Stream<QuerySnapshot<Map<String, dynamic>>> _cartStream;
+  bool _isCheckingOut = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _cartStream = _cartService.getCartStream(widget.userId);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,11 +45,14 @@ class _CartScreenState extends State<CartScreen> {
         iconTheme: const IconThemeData(color: AppColors.primaryDark),
       ),
       body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-        stream: _cartService.getCartStream(widget.userId),
+        stream: _cartStream,
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          // 1. Pehle loading state ko handle karein taake flash na ho
+          if (snapshot.connectionState == ConnectionState.waiting || !snapshot.hasData) {
             return const Center(
-              child: CircularProgressIndicator(color: AppColors.primaryDark),
+              child: CircularProgressIndicator(
+                color: AppColors.primaryDark,
+              ),
             );
           }
 
@@ -49,8 +60,9 @@ class _CartScreenState extends State<CartScreen> {
             return const Center(child: Text('Error loading cart.'));
           }
 
-          final docs = snapshot.data?.docs ?? [];
+          final docs = snapshot.data!.docs;
 
+          // 2. Agar cart empty hai toh empty state dikhayein
           if (docs.isEmpty) {
             return Center(
               child: Column(
@@ -81,7 +93,7 @@ class _CartScreenState extends State<CartScreen> {
           for (var doc in docs) {
             final data = doc.data();
             final num price = data['price'] ?? 0;
-            final num quantity = data['quantity'] ?? 1;
+            final num quantity = data['quantity'] / 1 ?? data['quantity'] ?? 1; // jo bhi aapka logic hai
 
             subtotal += price * quantity;
 
@@ -97,6 +109,7 @@ class _CartScreenState extends State<CartScreen> {
           const double deliveryFee = 300.0;
           double total = subtotal + deliveryFee;
 
+          // 3. Jab data fully available ho tab ye main UI render hogi
           return Column(
             children: [
               Expanded(
@@ -122,7 +135,6 @@ class _CartScreenState extends State<CartScreen> {
                       ),
                       child: Row(
                         children: [
-                          // Cached Network Image Implementation
                           ClipRRect(
                             borderRadius: BorderRadius.circular(12),
                             child: CachedNetworkImage(
@@ -183,7 +195,6 @@ class _CartScreenState extends State<CartScreen> {
                                 const SizedBox(height: 8),
                                 Row(
                                   children: [
-                                    // Minus Button
                                     InkWell(
                                       onTap: () => _cartService.updateQuantity(
                                         userId: widget.userId,
@@ -216,7 +227,6 @@ class _CartScreenState extends State<CartScreen> {
                                         ),
                                       ),
                                     ),
-                                    // Plus Button
                                     InkWell(
                                       onTap: () => _cartService.updateQuantity(
                                         userId: widget.userId,
@@ -240,7 +250,6 @@ class _CartScreenState extends State<CartScreen> {
                               ],
                             ),
                           ),
-                          // Delete Item
                           IconButton(
                             icon: const Icon(
                               Icons.delete_outline,
@@ -257,7 +266,6 @@ class _CartScreenState extends State<CartScreen> {
                   },
                 ),
               ),
-              // Footer Summary
               Container(
                 padding: const EdgeInsets.all(20.0),
                 decoration: BoxDecoration(
@@ -325,22 +333,40 @@ class _CartScreenState extends State<CartScreen> {
                       ),
                       const SizedBox(height: 20),
                       ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => CheckoutScreen(
-                                userId: widget.userId,
-                                subtotal: subtotal,
-                                deliveryFee: deliveryFee,
-                                cartItems: cartItems,
-                                onOrderCompleted: () async {
-                                  await _cartService.clearCart(widget.userId);
-                                },
-                              ),
-                            ),
-                          );
-                        },
+                        onPressed: _isCheckingOut
+                            ? null
+                            : () async {
+                                setState(() {
+                                  _isCheckingOut = true;
+                                });
+
+                                await Future.delayed(
+                                    const Duration(milliseconds: 100));
+
+                                if (!context.mounted) return;
+
+                                await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => CheckoutScreen(
+                                      userId: widget.userId,
+                                      subtotal: subtotal,
+                                      deliveryFee: deliveryFee,
+                                      cartItems: cartItems,
+                                      onOrderCompleted: () async {
+                                        await _cartService
+                                            .clearCart(widget.userId);
+                                      },
+                                    ),
+                                  ),
+                                );
+
+                                if (mounted) {
+                                  setState(() {
+                                    _isCheckingOut = false;
+                                  });
+                                }
+                              },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primaryDark,
                           minimumSize: const Size(double.infinity, 54),
@@ -349,14 +375,23 @@ class _CartScreenState extends State<CartScreen> {
                           ),
                           elevation: 0,
                         ),
-                        child: const Text(
-                          'Proceed to Checkout',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        child: _isCheckingOut
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text(
+                                'Proceed to Checkout',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                       ),
                     ],
                   ),

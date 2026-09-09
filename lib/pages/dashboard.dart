@@ -136,7 +136,9 @@ class Dashboard extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => OrdersScreen(userId: userId),
+                            builder: (_) => OrdersScreen(
+                              userId: currentUserId,
+                            ), // Use currentUserId here
                           ),
                         );
                       },
@@ -339,7 +341,7 @@ class Dashboard extends StatelessWidget {
                                       context,
                                       MaterialPageRoute(
                                         builder: (_) =>
-                                            CartScreen(userId: userId),
+                                            CartScreen(userId: currentUserId),
                                       ),
                                     );
                                   },

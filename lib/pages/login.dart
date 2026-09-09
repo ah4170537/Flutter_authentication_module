@@ -48,17 +48,20 @@ class _LoginState extends State<Login> {
 
     setState(() => _isLoading = true);
     try {
-      await AuthService.instance.signIn(
+      final UserCredential userCredential = await AuthService.instance.signIn(
         email: _emailController.text,
         password: _passwordController.text,
       );
       if (!mounted) return;
+      
+      final String userId = userCredential.user?.uid ?? '';
+
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (_) => const Dashboard()),
+        MaterialPageRoute(builder: (_) => Dashboard(userId: userId)),
         (route) => false,
       );
-    } on FirebaseAuthException catch (e) {
+    } on FirebaseAuthException catch (e) { 
       _showMessage(AuthService.instance.messageForError(e));
     } catch (_) {
       _showMessage("Something went wrong. Please try again.");

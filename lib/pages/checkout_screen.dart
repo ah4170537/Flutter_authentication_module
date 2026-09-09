@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
 import '../services/order_service.dart';
 import '../theme/app_colors.dart';
 import 'dashboard.dart';
@@ -83,7 +83,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => const Dashboard()),
+        MaterialPageRoute(builder: (context) => Dashboard(userId: FirebaseAuth.instance.currentUser?.uid ?? '')),
         (route) => false,
       );
     } catch (e) {

@@ -55,16 +55,19 @@ class _RegisterState extends State<Register> {
     setState(() => _isLoading = true);
     try {
       final credential = await AuthService.instance.signUp(
-        name: _nameController.text,
+        name: _nameController.text, // Add this back
         email: _emailController.text,
         password: _passwordController.text,
       );
       await credential.user?.updateDisplayName(_nameController.text.trim());
 
       if (!mounted) return;
+
+      final String userId = credential.user?.uid ?? '';
+
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (_) => const Dashboard()),
+        MaterialPageRoute(builder: (_) => Dashboard(userId: userId)),
         (route) => false,
       );
     } on FirebaseAuthException catch (e) {

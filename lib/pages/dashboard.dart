@@ -19,7 +19,9 @@ import 'see_all_products_screen.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 class Dashboard extends StatelessWidget {
-  const Dashboard({super.key});
+  final String userId; // Add this
+
+  const Dashboard({super.key, required this.userId}); // Update constructor
 
   Future<void> _logout(BuildContext context) async {
     await AuthService.instance.signOut();
@@ -36,7 +38,8 @@ class Dashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final User? user = FirebaseAuth.instance.currentUser;
-    final String userId = user?.uid ?? '';
+    // You can now use the passed userId directly or fallback to user?.uid
+    final String currentUserId = userId.isNotEmpty ? userId : (user?.uid ?? '');
     final String userName =
         user?.displayName ??
         user?.email?.split('@').first ??
@@ -52,163 +55,160 @@ class Dashboard extends StatelessWidget {
             children: [
               SizedBox(
                 width: double.infinity,
-             child:  DrawerHeader(
-                
-                decoration: const BoxDecoration(
-                  gradient: AppGradients.welcomeBackground,
-                  
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircleAvatar(
-                      radius: 28,
-                      backgroundColor: Colors.white.withValues(alpha: 0.2),
-                      child: Text(
-                        userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
+                child: DrawerHeader(
+                  decoration: const BoxDecoration(
+                    gradient: AppGradients.welcomeBackground,
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircleAvatar(
+                        radius: 28,
+                        backgroundColor: Colors.white.withValues(alpha: 0.2),
+                        child: Text(
+                          userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 22,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        userName,
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
-                          fontSize: 22,
+                          fontSize: 16,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      userName,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                      const SizedBox(height: 2),
+                      Text(
+                        userEmail,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.8),
+                          fontSize: 13,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      userEmail,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.8),
-                        fontSize: 13,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
               ),
               Expanded(
                 child: ListView(
                   padding: EdgeInsets.zero,
                   children: [
-                   ListTile(
-                        leading: const Icon(
-                          Icons.dashboard_outlined,
-                          color: AppColors.primaryDark,
-                        ),
-                        title: const Text(
-                          'Dashboard',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textDark,
-                          ),
-                        ),
-                        onTap: () {
-                          Navigator.pop(context);
-                        },
+                    ListTile(
+                      leading: const Icon(
+                        Icons.dashboard_outlined,
+                        color: AppColors.primaryDark,
                       ),
-                      ListTile(
-                        leading: const Icon(
-                          Icons.receipt_long_rounded,
-                          color: AppColors.primaryDark,
+                      title: const Text(
+                        'Dashboard',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textDark,
                         ),
-                        title: const Text(
-                          'My Orders',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textDark,
-                          ),
-                        ),
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => OrdersScreen(userId: userId),
-                            ),
-                          );
-                        },
                       ),
-                      
-                      ListTile(
-                        leading: const Icon(
-                          Icons.person_outline_rounded,
-                          color: AppColors.primaryDark,
-                        ),
-                        title: const Text(
-                          'Profile',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textDark,
-                          ),
-                        ),
-                        onTap: () {
-                          Navigator.pop(context);
-                          // TODO: Navigate to ProfileScreen
-                        },
+                      onTap: () {
+                        Navigator.pop(context);
+                      },
+                    ),
+                    ListTile(
+                      leading: const Icon(
+                        Icons.receipt_long_rounded,
+                        color: AppColors.primaryDark,
                       ),
-                      ListTile(
-                        leading: const Icon(
-                          Icons.location_on_outlined,
-                          color: AppColors.primaryDark,
+                      title: const Text(
+                        'My Orders',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textDark,
                         ),
-                        title: const Text(
-                          'Shipping Addresses',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textDark,
-                          ),
-                        ),
-                        onTap: () {
-                          Navigator.pop(context);
-                          // TODO: Navigate to AddressesScreen
-                        },
                       ),
-                      ListTile(
-                        leading: const Icon(
-                          Icons.settings_outlined,
-                          color: AppColors.primaryDark,
-                        ),
-                        title: const Text(
-                          'Settings',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textDark,
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => OrdersScreen(userId: userId),
                           ),
-                        ),
-                        onTap: () {
-                          Navigator.pop(context);
-                          // TODO: Navigate to SettingsScreen
-                        },
+                        );
+                      },
+                    ),
+                    ListTile(
+                      leading: const Icon(
+                        Icons.person_outline_rounded,
+                        color: AppColors.primaryDark,
                       ),
-                      ListTile(
-                        leading: const Icon(
-                          Icons.help_outline_rounded,
-                          color: AppColors.primaryDark,
+                      title: const Text(
+                        'Profile',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textDark,
                         ),
-                        title: const Text(
-                          'Help & Support',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textDark,
-                          ),
-                        ),
-                        onTap: () {
-                          Navigator.pop(context);
-                          // TODO: Navigate to SupportScreen
-                        },
                       ),
+                      onTap: () {
+                        Navigator.pop(context);
+                        // TODO: Navigate to ProfileScreen
+                      },
+                    ),
+                    ListTile(
+                      leading: const Icon(
+                        Icons.location_on_outlined,
+                        color: AppColors.primaryDark,
+                      ),
+                      title: const Text(
+                        'Shipping Addresses',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textDark,
+                        ),
+                      ),
+                      onTap: () {
+                        Navigator.pop(context);
+                        // TODO: Navigate to AddressesScreen
+                      },
+                    ),
+                    ListTile(
+                      leading: const Icon(
+                        Icons.settings_outlined,
+                        color: AppColors.primaryDark,
+                      ),
+                      title: const Text(
+                        'Settings',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textDark,
+                        ),
+                      ),
+                      onTap: () {
+                        Navigator.pop(context);
+                        // TODO: Navigate to SettingsScreen
+                      },
+                    ),
+                    ListTile(
+                      leading: const Icon(
+                        Icons.help_outline_rounded,
+                        color: AppColors.primaryDark,
+                      ),
+                      title: const Text(
+                        'Help & Support',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textDark,
+                        ),
+                      ),
+                      onTap: () {
+                        Navigator.pop(context);
+                        // TODO: Navigate to SupportScreen
+                      },
+                    ),
                   ],
                 ),
               ),

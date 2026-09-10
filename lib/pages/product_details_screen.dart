@@ -1,7 +1,9 @@
-import 'package:cached_network_image/cached_network_image.dart';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+
+import '../widgets/product_review_section.dart';
 
 import '../constants/app_strings.dart';
 import '../services/cart_service.dart';
@@ -9,6 +11,8 @@ import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/quantity_selector.dart';
 import 'cart_screen.dart';
+import 'recommended_products_section.dart';
+import 'product_image_slider.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
   final String productId;
@@ -22,8 +26,9 @@ class ProductDetailsScreen extends StatefulWidget {
 class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   final CartService _cartService = CartService();
   int _selectedQuantity = 1;
+int _currentImageIndex = 0;
   late final Stream<DocumentSnapshot> _productStream;
-  bool _isAddingToCart = false;
+ final ValueNotifier<bool> _isAddingToCart = ValueNotifier<bool>(false);
 
   @override
   void initState() {
@@ -61,18 +66,26 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             final String name =
                 data[AppStrings.nameField] ?? AppStrings.defaultProductName;
             final num price = data[AppStrings.priceField] ?? 0;
-            
-            final List<dynamic> imageUrlsList = data['imageUrls'] ?? [];
-            final String imageUrl = imageUrlsList.isNotEmpty
-                ? imageUrlsList.first
-                : (data[AppStrings.imageUrlField] ?? '');
+
+            // Safely extract the list, handling cases where it might be null or stored as a different type
+            final List<dynamic> imageUrlsList = (data['imageUrls'] is List)
+                ? data['imageUrls']
+                : [];
+
+            final List<String> effectiveImages = imageUrlsList.isNotEmpty
+                ? imageUrlsList.map((e) => e.toString()).toList()
+                : [data[AppStrings.imageUrlField]?.toString() ?? '']
+                      .where((s) => s.isNotEmpty)
+                      .toList();
+
             final String description =
                 data['description'] ??
                 'No description available for this product.';
+            final String subCategory = data['subCategory'] ?? '';
 
             return CustomScrollView(
               slivers: [
-                // Collapsible Image Header
+                // Collapsible Image Header with PageView & Indicator
                 SliverAppBar(
                   expandedHeight: 320,
                   pinned: true,
@@ -94,22 +107,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     ),
                   ),
                   flexibleSpace: FlexibleSpaceBar(
-                    background: CachedNetworkImage(
-                      imageUrl: imageUrl,
-                      fit: BoxFit.contain,
-                      fadeInDuration: const Duration(milliseconds: 100),
-                      placeholder: (context, url) =>
-                          Container(color: AppColors.hintGrey),
-                      errorWidget: (context, url, error) => Container(
-                        color: AppColors.hintGrey,
-                        child: const Icon(
-                          Icons.image_not_supported,
-                          size: 50,
-                          color: AppColors.textGrey,
-                        ),
-                      ),
-                    ),
-                  ),
+  background: ProductImageSlider(effectiveImages: effectiveImages),
+),
                 ),
 
                 // Product Details Content
@@ -220,7 +219,18 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                             },
                           ),
 
-                          const SizedBox(height: 100),
+                    
+
+                          RecommendedProductsSection(
+                            subCategory: subCategory,
+                            currentProductId: widget.productId,
+                          ),
+
+                      
+
+                          ProductReviewsSection(productId: widget.productId),
+
+                          
                         ],
                       ),
                     ),
@@ -231,125 +241,124 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           },
         ),
       ),
-      bottomNavigationBar: SafeArea(
-        child: Container(
-          padding: const EdgeInsets.all(16.0),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, -4),
-              ),
-            ],
-          ),
-          child: ElevatedButton(
-            onPressed: _isAddingToCart
-                ? null
-                : () async {
-                    setState(() {
-                      _isAddingToCart = true;
-                    });
-
-                    final User? user = FirebaseAuth.instance.currentUser;
-                    final String userId = user?.uid ?? '';
-
-                    if (userId.isEmpty) {
-                      if (mounted) {
-                        setState(() {
-                          _isAddingToCart = false;
-                        });
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Error: User not logged in'),
-                          ),
-                        );
-                      }
-                      return;
-                    }
-
-                    final docSnapshot = await FirebaseFirestore.instance
-                        .collection(AppStrings.productsCollection)
-                        .doc(widget.productId)
-                        .get();
-
-                    if (!docSnapshot.exists) {
-                      if (mounted) {
-                        setState(() {
-                          _isAddingToCart = false;
-                        });
-                      }
-                      return;
-                    }
-
-                    final data = docSnapshot.data() as Map<String, dynamic>;
-                    final List<dynamic> imageUrlsList = data['imageUrls'] ?? [];
-                    final String cartImageUrl = imageUrlsList.isNotEmpty
-                        ? imageUrlsList.first
-                        : (data[AppStrings.imageUrlField] ?? '');
-
-                    await _cartService.addToCart(
-                      userId: userId,
-                      productId: widget.productId,
-                      name:
-                          data[AppStrings.nameField] ??
-                          AppStrings.defaultProductName,
-                      price: data[AppStrings.priceField] ?? 0,
-                      imageUrl: cartImageUrl,
-                      quantity: _selectedQuantity,
-                    );
-
-                    if (!mounted) return;
-
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => CartScreen(userId: userId),
-                      ),
-                    );
-
-                    if (mounted) {
-                      setState(() {
-                        _isAddingToCart = false;
-                      });
-                    }
-                  },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryDark,
-              minimumSize: const Size(double.infinity, 54),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              elevation: 0,
-            ),
-            child: _isAddingToCart
-                ? const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2,
-                    ),
-                  )
-                : const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.shopping_bag_outlined, color: Colors.white),
-                      SizedBox(width: 8),
-                      Text(
-                        'Add to Cart',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-          ),
+     bottomNavigationBar: SafeArea(
+  child: Container(
+    padding: const EdgeInsets.all(16.0),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.05),
+          blurRadius: 10,
+          offset: const Offset(0, -4),
         ),
-      ),
+      ],
+    ),
+    child: ValueListenableBuilder<bool>(
+      valueListenable: _isAddingToCart,
+      builder: (context, isAdding, child) {
+        return ElevatedButton(
+          onPressed: isAdding
+              ? null
+              : () async {
+                  _isAddingToCart.value = true;
+
+                  final User? user = FirebaseAuth.instance.currentUser;
+                  final String userId = user?.uid ?? '';
+
+                  if (userId.isEmpty) {
+                    _isAddingToCart.value = false;
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Error: User not logged in'),
+                        ),
+                      );
+                    }
+                    return;
+                  }
+
+                  final docSnapshot = await FirebaseFirestore.instance
+                      .collection(AppStrings.productsCollection)
+                      .doc(widget.productId)
+                      .get();
+
+                  if (!docSnapshot.exists) {
+                    _isAddingToCart.value = false;
+                    return;
+                  }
+
+                  final data = docSnapshot.data() as Map<String, dynamic>;
+                  final List<dynamic> imageUrlsList = data['imageUrls'] ?? [];
+
+                  final List<String> effectiveImages = imageUrlsList.isNotEmpty
+                      ? imageUrlsList.map((e) => e.toString()).toList()
+                      : [data[AppStrings.imageUrlField]?.toString() ?? '']
+                          .where((s) => s.isNotEmpty)
+                          .toList();
+
+                  final String cartImageUrl = effectiveImages.isNotEmpty
+                      ? effectiveImages[0] // Agar index manage karna ho to kar lein
+                      : '';
+
+                  await _cartService.addToCart(
+                    userId: userId,
+                    productId: widget.productId,
+                    name: data[AppStrings.nameField] ??
+                        AppStrings.defaultProductName,
+                    price: data[AppStrings.priceField] ?? 0,
+                    imageUrl: cartImageUrl,
+                    quantity: _selectedQuantity,
+                  );
+
+                  if (!mounted) return;
+
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CartScreen(userId: userId),
+                    ),
+                  );
+
+                  _isAddingToCart.value = false;
+                },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primaryDark,
+            minimumSize: const Size(double.infinity, 54),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            elevation: 0,
+          ),
+          child: isAdding
+              ? const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
+              : const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.shopping_bag_outlined, color: Colors.white),
+                    SizedBox(width: 8),
+                    Text(
+                      'Add to Cart',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+        );
+      },
+    ),
+  ),
+),
     );
   }
 }

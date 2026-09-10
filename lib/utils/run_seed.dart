@@ -147,7 +147,7 @@ void main() async {
       'description': 'Formal genuine leather shoes for men.',
       'price': 8000,
       'category': 'popular',
-      'subCategory': 'leather_shoes',
+      'subCategory': 'shoes',
       'imagePaths': [
         'assets/products/leather_shoes.jpg',
         'assets/products/leather_shoes1.png',
@@ -173,7 +173,7 @@ void main() async {
       'description': 'Iconic suede low-top sneakers with durable rubber outsole.',
       'price': 14000,
       'category': 'popular',
-      'subCategory': 'sneakers',
+      'subCategory': 'shoes',
       'imagePaths': [
         'assets/products/puma_sneakers.jpg',
         'assets/products/puma_sneakers1.png',

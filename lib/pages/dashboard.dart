@@ -335,30 +335,75 @@ class Dashboard extends StatelessWidget {
                             ),
                             Row(
                               children: [
-                                IconButton(
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) =>
-                                            CartScreen(userId: currentUserId),
-                                      ),
+                                // Cart Icon with Real-time Badge Count
+                                StreamBuilder<QuerySnapshot>(
+                                  stream: FirebaseFirestore.instance
+                                      .collection('cart')
+                                      .doc(currentUserId)
+                                      .collection('user_cart')
+                                      .snapshots(),
+                                  builder: (context, snapshot) {
+                                    int cartCount = 0;
+                                    if (snapshot.hasData) {
+                                      cartCount = snapshot.data!.docs.length;
+                                    }
+
+                                    return Stack(
+                                      children: [
+                                        IconButton(
+                                          onPressed: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) => CartScreen(
+                                                  userId: currentUserId,
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                          icon: Container(
+                                            padding: const EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white.withValues(
+                                                alpha: 0.2,
+                                              ),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: const Icon(
+                                              Icons.shopping_cart_outlined,
+                                              color: AppColors.white,
+                                              size: 20,
+                                            ),
+                                          ),
+                                        ),
+                                        if (cartCount > 0)
+                                          Positioned(
+                                            right: 6,
+                                            top: 6,
+                                            child: Container(
+                                              padding: const EdgeInsets.all(4),
+                                              decoration: const BoxDecoration(
+                                                color: Colors.red,
+                                                shape: BoxShape.circle,
+                                              ),
+                                              constraints: const BoxConstraints(
+                                                minWidth: 16,
+                                                minHeight: 16,
+                                              ),
+                                              child: Text(
+                                                '$cartCount',
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                                textAlign: TextAlign.center,
+                                              ),
+                                            ),
+                                          ),
+                                      ],
                                     );
                                   },
-                                  icon: Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.2,
-                                      ),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(
-                                      Icons.shopping_cart_outlined,
-                                      color: AppColors.white,
-                                      size: 20,
-                                    ),
-                                  ),
                                 ),
                               ],
                             ),
@@ -468,9 +513,11 @@ class Dashboard extends StatelessWidget {
                           data[AppStrings.nameField] ??
                           AppStrings.defaultProductName;
                       final num price = data[AppStrings.priceField] ?? 0;
-                      // Update this part inside your CarouselSlider itemBuilder:
-final List<dynamic> imageUrlsList = data['imageUrls'] ?? [];
-final String imageUrl = imageUrlsList.isNotEmpty ? imageUrlsList.first : (data[AppStrings.imageUrlField] ?? '');
+                      final List<dynamic> imageUrlsList =
+                          data['imageUrls'] ?? [];
+                      final String imageUrl = imageUrlsList.isNotEmpty
+                          ? imageUrlsList.first
+                          : (data[AppStrings.imageUrlField] ?? '');
 
                       return GestureDetector(
                         onTap: () {

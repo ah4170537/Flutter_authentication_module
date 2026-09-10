@@ -66,4 +66,30 @@ class CartService {
   Stream<QuerySnapshot<Map<String, dynamic>>> getCartStream(String userId) {
     return _cartRef(userId).orderBy('updatedAt', descending: true).snapshots();
   }
+
+
+  // cart_service.dart ke andar yeh function add karein
+Future<void> reorderItems({
+  required String userId,
+  required List<dynamic> orderedItems,
+}) async {
+  final cartRef = FirebaseFirestore.instance
+      .collection('users')
+      .doc(userId)
+      .collection('cart');
+
+  // Batch write ya loops ke zariye items ko cart me dobara add karein
+  for (var item in orderedItems) {
+    // Agar order map me product ki ID alag key se save hai toh us hisab se set karein
+    final String productId = item['productId'] ?? item['id'];
+    
+    await cartRef.doc(productId).set({
+      'name': item['name'],
+      'price': item['price'],
+      'quantity': item['quantity'] ?? 1,
+      'imageUrl': item['imageUrl'] ?? '',
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true)); // Agar pehle se hai toh merge/update ho jaye
+  }
+}
 }

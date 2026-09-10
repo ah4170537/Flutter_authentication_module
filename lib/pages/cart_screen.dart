@@ -20,6 +20,9 @@ class _CartScreenState extends State<CartScreen> {
   late final Stream<QuerySnapshot<Map<String, dynamic>>> _cartStream;
   bool _isCheckingOut = false;
 
+  // Un items ki IDs ko track karne ke liye jo user ne untick ki hain
+  final Set<String> _deselectedIds = {};
+
   @override
   void initState() {
     super.initState();
@@ -47,12 +50,10 @@ class _CartScreenState extends State<CartScreen> {
       body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
         stream: _cartStream,
         builder: (context, snapshot) {
-          // 1. Pehle loading state ko handle karein taake flash na ho
-          if (snapshot.connectionState == ConnectionState.waiting || !snapshot.hasData) {
+          if (snapshot.connectionState == ConnectionState.waiting ||
+              !snapshot.hasData) {
             return const Center(
-              child: CircularProgressIndicator(
-                color: AppColors.primaryDark,
-              ),
+              child: CircularProgressIndicator(color: AppColors.primaryDark),
             );
           }
 
@@ -62,7 +63,6 @@ class _CartScreenState extends State<CartScreen> {
 
           final docs = snapshot.data!.docs;
 
-          // 2. Agar cart empty hai toh empty state dikhayein
           if (docs.isEmpty) {
             return Center(
               child: Column(
@@ -88,28 +88,37 @@ class _CartScreenState extends State<CartScreen> {
           }
 
           double subtotal = 0.0;
-          List<Map<String, dynamic>> cartItems = [];
+          List<Map<String, dynamic>> selectedCartItems = [];
 
           for (var doc in docs) {
             final data = doc.data();
+            final productId = doc.id;
             final num price = data['price'] ?? 0;
-            final num quantity = data['quantity'] / 1 ?? data['quantity'] ?? 1; // jo bhi aapka logic hai
+            final num quantity = data['quantity'] ?? 1;
 
-            subtotal += price * quantity;
+            // Check karein kya yeh product user ne select (tick) kiya hua hai?
+            final bool isSelected = !_deselectedIds.contains(productId);
 
-            cartItems.add({
-              'productId': doc.id,
+            final itemMap = {
+              'productId': productId,
               'name': data['name'] ?? 'Product',
               'price': price,
               'quantity': quantity,
               'imageUrl': data['imageUrl'] ?? '',
-            });
+            };
+
+            if (isSelected) {
+              subtotal += price * quantity;
+              selectedCartItems.add(itemMap);
+            }
           }
 
           const double deliveryFee = 300.0;
-          double total = subtotal + deliveryFee;
+          // Agar koi item select nahi hai toh delivery fee bhi 0 ho jayegi ya aap apni marzi se rakh sakte hain
+          double total = selectedCartItems.isEmpty
+              ? 0.0
+              : subtotal + deliveryFee;
 
-          // 3. Jab data fully available ho tab ye main UI render hogi
           return Column(
             children: [
               Expanded(
@@ -123,43 +132,55 @@ class _CartScreenState extends State<CartScreen> {
                     final String name = data['name'] ?? 'Product';
                     final num price = data['price'] ?? 0;
                     final String imageUrl = data['imageUrl'] ?? '';
-                    final int quantity = data['quantity'] ?? 1;
+                    final dynamic rawQty = data['quantity'] ?? 1;
+                    final int quantity = (rawQty is num)
+                        ? rawQty.toInt()
+                        : (int.tryParse(rawQty.toString()) ?? 1);
+                    final bool isSelected = !_deselectedIds.contains(productId);
 
                     return Container(
                       margin: const EdgeInsets.only(bottom: 16.0),
                       padding: const EdgeInsets.all(12.0),
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade50,
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.grey.shade200),
+                        border: Border.all(
+                          color: isSelected
+                              ? AppColors.primaryDark.withValues(alpha: 0.3)
+                              : Colors.grey.shade200,
+                        ),
                       ),
                       child: Row(
                         children: [
+                          // Checkbox for selecting product for checkout
+                          Checkbox(
+                            value: isSelected,
+                            activeColor: AppColors.primaryDark,
+                            onChanged: (bool? value) {
+                              setState(() {
+                                if (value == true) {
+                                  _deselectedIds.remove(productId);
+                                } else {
+                                  _deselectedIds.add(productId);
+                                }
+                              });
+                            },
+                          ),
                           ClipRRect(
                             borderRadius: BorderRadius.circular(12),
                             child: CachedNetworkImage(
                               imageUrl: imageUrl,
-                              width: 70,
-                              height: 70,
+                              width: 60,
+                              height: 60,
                               fit: BoxFit.cover,
                               placeholder: (context, url) => Container(
-                                width: 70,
-                                height: 70,
+                                width: 60,
+                                height: 60,
                                 color: Colors.grey.shade200,
-                                child: const Center(
-                                  child: SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: AppColors.primaryDark,
-                                    ),
-                                  ),
-                                ),
                               ),
                               errorWidget: (context, url, error) => Container(
-                                width: 70,
-                                height: 70,
+                                width: 60,
+                                height: 60,
                                 color: Colors.grey.shade200,
                                 child: const Icon(
                                   Icons.image_not_supported,
@@ -205,7 +226,9 @@ class _CartScreenState extends State<CartScreen> {
                                         padding: const EdgeInsets.all(4),
                                         decoration: BoxDecoration(
                                           color: Colors.white,
-                                          borderRadius: BorderRadius.circular(6),
+                                          borderRadius: BorderRadius.circular(
+                                            6,
+                                          ),
                                           border: Border.all(
                                             color: Colors.grey.shade300,
                                           ),
@@ -237,7 +260,9 @@ class _CartScreenState extends State<CartScreen> {
                                         padding: const EdgeInsets.all(4),
                                         decoration: BoxDecoration(
                                           color: Colors.white,
-                                          borderRadius: BorderRadius.circular(6),
+                                          borderRadius: BorderRadius.circular(
+                                            6,
+                                          ),
                                           border: Border.all(
                                             color: Colors.grey.shade300,
                                           ),
@@ -304,7 +329,7 @@ class _CartScreenState extends State<CartScreen> {
                             style: TextStyle(color: Colors.grey),
                           ),
                           Text(
-                            'PKR ${deliveryFee.toStringAsFixed(2)}',
+                            'PKR ${selectedCartItems.isEmpty ? 0.0 : deliveryFee.toStringAsFixed(2)}',
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ],
@@ -333,7 +358,7 @@ class _CartScreenState extends State<CartScreen> {
                       ),
                       const SizedBox(height: 20),
                       ElevatedButton(
-                        onPressed: _isCheckingOut
+                        onPressed: (_isCheckingOut || selectedCartItems.isEmpty)
                             ? null
                             : () async {
                                 setState(() {
@@ -341,7 +366,8 @@ class _CartScreenState extends State<CartScreen> {
                                 });
 
                                 await Future.delayed(
-                                    const Duration(milliseconds: 100));
+                                  const Duration(milliseconds: 100),
+                                );
 
                                 if (!context.mounted) return;
 
@@ -352,10 +378,15 @@ class _CartScreenState extends State<CartScreen> {
                                       userId: widget.userId,
                                       subtotal: subtotal,
                                       deliveryFee: deliveryFee,
-                                      cartItems: cartItems,
+                                      cartItems: selectedCartItems, // Sirf selected items pass hongi
                                       onOrderCompleted: () async {
-                                        await _cartService
-                                            .clearCart(widget.userId);
+                                        // Order complete hone par sirf wahi items cart se delete hongi jo order hui hain
+                                        for (var item in selectedCartItems) {
+                                          await _cartService.removeFromCart(
+                                            userId: widget.userId,
+                                            productId: item['productId'],
+                                          );
+                                        }
                                       },
                                     ),
                                   ),
@@ -384,9 +415,11 @@ class _CartScreenState extends State<CartScreen> {
                                   strokeWidth: 2,
                                 ),
                               )
-                            : const Text(
-                                'Proceed to Checkout',
-                                style: TextStyle(
+                            : Text(
+                                selectedCartItems.isEmpty
+                                    ? 'Select Items to Checkout'
+                                    : 'Proceed to Checkout',
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,

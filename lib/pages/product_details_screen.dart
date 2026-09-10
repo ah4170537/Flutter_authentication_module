@@ -12,6 +12,7 @@ import '../widgets/quantity_selector.dart';
 import 'cart_screen.dart';
 import 'recommended_products_section.dart';
 import 'product_image_slider.dart';
+import '../widgets/write_review_sheet.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
   final String productId;
@@ -24,7 +25,8 @@ class ProductDetailsScreen extends StatefulWidget {
 
 class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   final CartService _cartService = CartService();
-  int _selectedQuantity = 1; // Sirf variable rakha hai, setState ki zaroorat nahi
+  int _selectedQuantity =
+      1; // Sirf variable rakha hai, setState ki zaroorat nahi
   late final Stream<DocumentSnapshot> _productStream;
   final ValueNotifier<bool> _isAddingToCart = ValueNotifier<bool>(false);
 
@@ -72,8 +74,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             final List<String> effectiveImages = imageUrlsList.isNotEmpty
                 ? imageUrlsList.map((e) => e.toString()).toList()
                 : [data[AppStrings.imageUrlField]?.toString() ?? '']
-                    .where((s) => s.isNotEmpty)
-                    .toList();
+                      .where((s) => s.isNotEmpty)
+                      .toList();
 
             final String description =
                 data['description'] ??
@@ -103,7 +105,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     ),
                   ),
                   flexibleSpace: FlexibleSpaceBar(
-                    background: ProductImageSlider(effectiveImages: effectiveImages),
+                    background: ProductImageSlider(
+                      effectiveImages: effectiveImages,
+                    ),
                   ),
                 ),
                 SliverToBoxAdapter(
@@ -157,26 +161,100 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                             ],
                           ),
                           const SizedBox(height: 12),
-                          const Row(
-                            children: [
-                              Icon(Icons.star, color: Colors.amber, size: 18),
-                              SizedBox(width: 4),
-                              Text(
-                                '4.8',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              SizedBox(width: 4),
-                              Text(
-                                '(120 reviews)',
-                                style: TextStyle(
-                                  color: AppColors.textGrey,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ],
+                          StreamBuilder<DocumentSnapshot>(
+                            stream: FirebaseFirestore.instance
+                                .collection('reviews')
+                                .doc(widget.productId)
+                                .snapshots(),
+                            builder: (context, reviewSnapshot) {
+                              // Still loading — show a neutral placeholder, not "New" or "0 reviews"
+                              if (reviewSnapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return Row(
+                                  children: [
+                                    Icon(
+                                      Icons.star,
+                                      color: Colors.amber.withValues(
+                                        alpha: 0.3,
+                                      ),
+                                      size: 18,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    SizedBox(
+                                      width: 60,
+                                      height: 12,
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey.shade200,
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }
+
+                              double avgRating = 0;
+                              int reviewCount = 0;
+
+                              if (reviewSnapshot.hasData &&
+                                  reviewSnapshot.data!.exists) {
+                                final reviewData =
+                                    reviewSnapshot.data!.data()
+                                        as Map<String, dynamic>?;
+                                final List<dynamic> reviewsList =
+                                    reviewData?['reviews'] ?? [];
+
+                                reviewCount = reviewsList.length;
+
+                                if (reviewCount > 0) {
+                                  final double totalRating = reviewsList.fold(
+                                    0.0,
+                                    (sum, review) {
+                                      final r =
+                                          (review
+                                              as Map<
+                                                String,
+                                                dynamic
+                                              >)['rating'] ??
+                                          0;
+                                      return sum + (r as num).toDouble();
+                                    },
+                                  );
+                                  avgRating = totalRating / reviewCount;
+                                }
+                              }
+
+                              return Row(
+                                children: [
+                                  const Icon(
+                                    Icons.star,
+                                    color: Colors.amber,
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    reviewCount > 0
+                                        ? avgRating.toStringAsFixed(1)
+                                        : 'New',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '($reviewCount reviews)',
+                                    style: const TextStyle(
+                                      color: AppColors.textGrey,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
                           ),
                           const SizedBox(height: 24),
                           const Text(
@@ -197,12 +275,13 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                             ),
                           ),
                           const SizedBox(height: 24),
-                          
+
                           // Yahan setState hata kar sirf variable update kiya hai
                           QuantitySelector(
                             initialQuantity: _selectedQuantity,
                             onChanged: (newQuantity) {
-                              _selectedQuantity = newQuantity; // No setState here!
+                              _selectedQuantity =
+                                  newQuantity; // No setState here!
                             },
                           ),
                           const SizedBox(height: 24),
@@ -212,6 +291,35 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                             currentProductId: widget.productId,
                           ),
                           const SizedBox(height: 24),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Reviews',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.primaryDark,
+                                ),
+                              ),
+                              TextButton.icon(
+                                onPressed: () => showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  backgroundColor: Colors.transparent,
+                                  builder: (_) => WriteReviewSheet(
+                                    productId: widget.productId,
+                                  ),
+                                ),
+                                icon: const Icon(
+                                  Icons.rate_review_outlined,
+                                  size: 18,
+                                ),
+                                label: const Text('Write a Review'),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
 
                           ProductReviewsSection(productId: widget.productId),
                         ],
@@ -272,13 +380,15 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                         }
 
                         final data = docSnapshot.data() as Map<String, dynamic>;
-                        final List<dynamic> imageUrlsList = data['imageUrls'] ?? [];
+                        final List<dynamic> imageUrlsList =
+                            data['imageUrls'] ?? [];
 
-                        final List<String> effectiveImages = imageUrlsList.isNotEmpty
+                        final List<String> effectiveImages =
+                            imageUrlsList.isNotEmpty
                             ? imageUrlsList.map((e) => e.toString()).toList()
                             : [data[AppStrings.imageUrlField]?.toString() ?? '']
-                                .where((s) => s.isNotEmpty)
-                                .toList();
+                                  .where((s) => s.isNotEmpty)
+                                  .toList();
 
                         final String cartImageUrl = effectiveImages.isNotEmpty
                             ? effectiveImages[0]
@@ -287,7 +397,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                         await _cartService.addToCart(
                           userId: userId,
                           productId: widget.productId,
-                          name: data[AppStrings.nameField] ??
+                          name:
+                              data[AppStrings.nameField] ??
                               AppStrings.defaultProductName,
                           price: data[AppStrings.priceField] ?? 0,
                           imageUrl: cartImageUrl,
@@ -325,7 +436,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     : const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.shopping_bag_outlined, color: Colors.white),
+                          Icon(
+                            Icons.shopping_bag_outlined,
+                            color: Colors.white,
+                          ),
                           SizedBox(width: 8),
                           Text(
                             'Add to Cart',

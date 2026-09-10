@@ -1,14 +1,21 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
+import 'checkout_screen.dart'; // Apni checkout screen ka sahi import path yahan dein
 
 class OrderDetailScreen extends StatelessWidget {
   final String orderId;
+  final String? userId;
 
-  const OrderDetailScreen({super.key, required this.orderId});
+  const OrderDetailScreen({super.key, required this.orderId, this.userId});
 
   @override
   Widget build(BuildContext context) {
+    final String effectiveUserId = userId != null && userId!.isNotEmpty
+        ? userId!
+        : (FirebaseAuth.instance.currentUser?.uid ?? '');
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Order Details'),
@@ -17,7 +24,12 @@ class OrderDetailScreen extends StatelessWidget {
         elevation: 0,
       ),
       body: FutureBuilder<DocumentSnapshot>(
-        future: FirebaseFirestore.instance.collection('orders').doc(orderId).get(),
+        future: FirebaseFirestore.instance
+            .collection('orders')
+            .doc(effectiveUserId)
+            .collection('user_orders')
+            .doc(orderId)
+            .get(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
@@ -32,7 +44,6 @@ class OrderDetailScreen extends StatelessWidget {
           final orderData = snapshot.data!.data() as Map<String, dynamic>;
           final items = orderData['items'] as List<dynamic>? ?? [];
           
-          // Safely handle total price extraction
           final dynamic rawPrice = orderData['totalPrice'] ?? 
                                    orderData['total'] ?? 
                                    orderData['amount'] ?? 
@@ -71,7 +82,11 @@ class OrderDetailScreen extends StatelessWidget {
                       final itemName = item['name'] ?? 'Product';
                       final dynamic itemPriceRaw = item['price'] ?? 0;
                       final num itemPrice = (itemPriceRaw is num) ? itemPriceRaw : (num.tryParse(itemPriceRaw.toString()) ?? 0);
-                      final int quantity = item['quantity'] ?? 1;
+                      
+                      // Safe quantity parsing to avoid type errors
+                      final dynamic rawQty = item['quantity'] ?? 1;
+                      final int quantity = (rawQty is num) ? rawQty.toInt() : (int.tryParse(rawQty.toString()) ?? 1);
+                      
                       final String imageUrl = item['imageUrl'] ?? '';
 
                       return Card(
@@ -83,7 +98,6 @@ class OrderDetailScreen extends StatelessWidget {
                           padding: const EdgeInsets.all(10.0),
                           child: Row(
                             children: [
-                              // Product Image
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(8),
                                 child: imageUrl.isNotEmpty
@@ -107,7 +121,6 @@ class OrderDetailScreen extends StatelessWidget {
                                       ),
                               ),
                               const SizedBox(width: 12),
-                              // Product Details (Name, Qty)
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -132,7 +145,6 @@ class OrderDetailScreen extends StatelessWidget {
                                   ],
                                 ),
                               ),
-                              // Total Item Price
                               Text(
                                 'PKR ${itemPrice * quantity}',
                                 style: const TextStyle(
@@ -165,6 +177,49 @@ class OrderDetailScreen extends StatelessWidget {
                     ],
                   ),
                 ),
+                const SizedBox(height: 12),
+                // Reorder Button
+                SizedBox(
+  width: double.infinity,
+  height: 50,
+  child: ElevatedButton(
+    onPressed: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CheckoutScreen(
+            userId: effectiveUserId,
+            subtotal: totalPrice.toDouble(),
+            deliveryFee: 0, 
+            cartItems: items.map((item) {
+              return {
+                'productId': item['productId'] ?? '',
+                'name': item['name'] ?? 'Product',
+                'price': item['price'] ?? 0,
+                'quantity': item['quantity'] ?? 1,
+                'imageUrl': item['imageUrl'] ?? '',
+              };
+            }).toList(),
+          ),
+        ),
+      );
+    },
+    style: ElevatedButton.styleFrom(
+      backgroundColor: AppColors.primaryDark,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+    ),
+    child: const Text(
+      'Reorder',
+      style: TextStyle(
+        color: Colors.white,
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+      ),
+    ),
+  ),
+),
               ],
             ),
           );

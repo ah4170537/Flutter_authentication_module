@@ -40,9 +40,10 @@ class OrdersScreen extends StatelessWidget {
       body: StreamBuilder<QuerySnapshot>(
         // Removed .orderBy() to prevent index errors; you can add it back later once the index is created
         stream: FirebaseFirestore.instance
-            .collection('orders')
-            .where('userId', isEqualTo: effectiveUserId)
-            .snapshots(),
+    .collection('orders')
+    .doc(effectiveUserId)
+    .collection('user_orders')
+    .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
@@ -112,7 +113,8 @@ class OrdersScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => OrderDetailScreen(orderId: orderId),
+                        builder: (context) => OrderDetailScreen(orderId: orderId,
+                        userId: effectiveUserId,),
                       ),
                     );
                   },

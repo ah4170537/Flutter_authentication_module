@@ -1,4 +1,3 @@
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -25,10 +24,9 @@ class ProductDetailsScreen extends StatefulWidget {
 
 class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   final CartService _cartService = CartService();
-  int _selectedQuantity = 1;
-int _currentImageIndex = 0;
+  int _selectedQuantity = 1; // Sirf variable rakha hai, setState ki zaroorat nahi
   late final Stream<DocumentSnapshot> _productStream;
- final ValueNotifier<bool> _isAddingToCart = ValueNotifier<bool>(false);
+  final ValueNotifier<bool> _isAddingToCart = ValueNotifier<bool>(false);
 
   @override
   void initState() {
@@ -67,7 +65,6 @@ int _currentImageIndex = 0;
                 data[AppStrings.nameField] ?? AppStrings.defaultProductName;
             final num price = data[AppStrings.priceField] ?? 0;
 
-            // Safely extract the list, handling cases where it might be null or stored as a different type
             final List<dynamic> imageUrlsList = (data['imageUrls'] is List)
                 ? data['imageUrls']
                 : [];
@@ -75,8 +72,8 @@ int _currentImageIndex = 0;
             final List<String> effectiveImages = imageUrlsList.isNotEmpty
                 ? imageUrlsList.map((e) => e.toString()).toList()
                 : [data[AppStrings.imageUrlField]?.toString() ?? '']
-                      .where((s) => s.isNotEmpty)
-                      .toList();
+                    .where((s) => s.isNotEmpty)
+                    .toList();
 
             final String description =
                 data['description'] ??
@@ -85,7 +82,6 @@ int _currentImageIndex = 0;
 
             return CustomScrollView(
               slivers: [
-                // Collapsible Image Header with PageView & Indicator
                 SliverAppBar(
                   expandedHeight: 320,
                   pinned: true,
@@ -107,11 +103,9 @@ int _currentImageIndex = 0;
                     ),
                   ),
                   flexibleSpace: FlexibleSpaceBar(
-  background: ProductImageSlider(effectiveImages: effectiveImages),
-),
+                    background: ProductImageSlider(effectiveImages: effectiveImages),
+                  ),
                 ),
-
-                // Product Details Content
                 SliverToBoxAdapter(
                   child: Container(
                     transform: Matrix4.translationValues(0.0, -20.0, 0.0),
@@ -138,7 +132,6 @@ int _currentImageIndex = 0;
                             ),
                           ),
                           const SizedBox(height: 20),
-
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -163,9 +156,7 @@ int _currentImageIndex = 0;
                               ),
                             ],
                           ),
-
                           const SizedBox(height: 12),
-
                           const Row(
                             children: [
                               Icon(Icons.star, color: Colors.amber, size: 18),
@@ -187,9 +178,7 @@ int _currentImageIndex = 0;
                               ),
                             ],
                           ),
-
                           const SizedBox(height: 24),
-
                           const Text(
                             'Description',
                             style: TextStyle(
@@ -207,30 +196,24 @@ int _currentImageIndex = 0;
                               height: 1.5,
                             ),
                           ),
-
                           const SizedBox(height: 24),
-
+                          
+                          // Yahan setState hata kar sirf variable update kiya hai
                           QuantitySelector(
                             initialQuantity: _selectedQuantity,
                             onChanged: (newQuantity) {
-                              setState(() {
-                                _selectedQuantity = newQuantity;
-                              });
+                              _selectedQuantity = newQuantity; // No setState here!
                             },
                           ),
-
-                    
+                          const SizedBox(height: 24),
 
                           RecommendedProductsSection(
                             subCategory: subCategory,
                             currentProductId: widget.productId,
                           ),
-
-                      
+                          const SizedBox(height: 24),
 
                           ProductReviewsSection(productId: widget.productId),
-
-                          
                         ],
                       ),
                     ),
@@ -241,124 +224,124 @@ int _currentImageIndex = 0;
           },
         ),
       ),
-     bottomNavigationBar: SafeArea(
-  child: Container(
-    padding: const EdgeInsets.all(16.0),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withValues(alpha: 0.05),
-          blurRadius: 10,
-          offset: const Offset(0, -4),
-        ),
-      ],
-    ),
-    child: ValueListenableBuilder<bool>(
-      valueListenable: _isAddingToCart,
-      builder: (context, isAdding, child) {
-        return ElevatedButton(
-          onPressed: isAdding
-              ? null
-              : () async {
-                  _isAddingToCart.value = true;
-
-                  final User? user = FirebaseAuth.instance.currentUser;
-                  final String userId = user?.uid ?? '';
-
-                  if (userId.isEmpty) {
-                    _isAddingToCart.value = false;
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Error: User not logged in'),
-                        ),
-                      );
-                    }
-                    return;
-                  }
-
-                  final docSnapshot = await FirebaseFirestore.instance
-                      .collection(AppStrings.productsCollection)
-                      .doc(widget.productId)
-                      .get();
-
-                  if (!docSnapshot.exists) {
-                    _isAddingToCart.value = false;
-                    return;
-                  }
-
-                  final data = docSnapshot.data() as Map<String, dynamic>;
-                  final List<dynamic> imageUrlsList = data['imageUrls'] ?? [];
-
-                  final List<String> effectiveImages = imageUrlsList.isNotEmpty
-                      ? imageUrlsList.map((e) => e.toString()).toList()
-                      : [data[AppStrings.imageUrlField]?.toString() ?? '']
-                          .where((s) => s.isNotEmpty)
-                          .toList();
-
-                  final String cartImageUrl = effectiveImages.isNotEmpty
-                      ? effectiveImages[0] // Agar index manage karna ho to kar lein
-                      : '';
-
-                  await _cartService.addToCart(
-                    userId: userId,
-                    productId: widget.productId,
-                    name: data[AppStrings.nameField] ??
-                        AppStrings.defaultProductName,
-                    price: data[AppStrings.priceField] ?? 0,
-                    imageUrl: cartImageUrl,
-                    quantity: _selectedQuantity,
-                  );
-
-                  if (!mounted) return;
-
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => CartScreen(userId: userId),
-                    ),
-                  );
-
-                  _isAddingToCart.value = false;
-                },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primaryDark,
-            minimumSize: const Size(double.infinity, 54),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            elevation: 0,
+      bottomNavigationBar: SafeArea(
+        child: Container(
+          padding: const EdgeInsets.all(16.0),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, -4),
+              ),
+            ],
           ),
-          child: isAdding
-              ? const SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 2,
+          child: ValueListenableBuilder<bool>(
+            valueListenable: _isAddingToCart,
+            builder: (context, isAdding, child) {
+              return ElevatedButton(
+                onPressed: isAdding
+                    ? null
+                    : () async {
+                        _isAddingToCart.value = true;
+
+                        final User? user = FirebaseAuth.instance.currentUser;
+                        final String userId = user?.uid ?? '';
+
+                        if (userId.isEmpty) {
+                          _isAddingToCart.value = false;
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Error: User not logged in'),
+                              ),
+                            );
+                          }
+                          return;
+                        }
+
+                        final docSnapshot = await FirebaseFirestore.instance
+                            .collection(AppStrings.productsCollection)
+                            .doc(widget.productId)
+                            .get();
+
+                        if (!docSnapshot.exists) {
+                          _isAddingToCart.value = false;
+                          return;
+                        }
+
+                        final data = docSnapshot.data() as Map<String, dynamic>;
+                        final List<dynamic> imageUrlsList = data['imageUrls'] ?? [];
+
+                        final List<String> effectiveImages = imageUrlsList.isNotEmpty
+                            ? imageUrlsList.map((e) => e.toString()).toList()
+                            : [data[AppStrings.imageUrlField]?.toString() ?? '']
+                                .where((s) => s.isNotEmpty)
+                                .toList();
+
+                        final String cartImageUrl = effectiveImages.isNotEmpty
+                            ? effectiveImages[0]
+                            : '';
+
+                        await _cartService.addToCart(
+                          userId: userId,
+                          productId: widget.productId,
+                          name: data[AppStrings.nameField] ??
+                              AppStrings.defaultProductName,
+                          price: data[AppStrings.priceField] ?? 0,
+                          imageUrl: cartImageUrl,
+                          quantity: _selectedQuantity,
+                        );
+
+                        if (!mounted) return;
+
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CartScreen(userId: userId),
+                          ),
+                        );
+
+                        _isAddingToCart.value = false;
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryDark,
+                  minimumSize: const Size(double.infinity, 54),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                )
-              : const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.shopping_bag_outlined, color: Colors.white),
-                    SizedBox(width: 8),
-                    Text(
-                      'Add to Cart',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+                  elevation: 0,
                 ),
-        );
-      },
-    ),
-  ),
-),
+                child: isAdding
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.shopping_bag_outlined, color: Colors.white),
+                          SizedBox(width: 8),
+                          Text(
+                            'Add to Cart',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+              );
+            },
+          ),
+        ),
+      ),
     );
   }
 }

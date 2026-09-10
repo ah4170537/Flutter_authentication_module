@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/order_service.dart';
@@ -35,21 +36,74 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final _postalCodeController = TextEditingController();
   final _addressController = TextEditingController();
 
-
   String _selectedDeliveryMode = 'Cash on Delivery';
-
   bool _isLoading = false;
+  bool _isSavingInfo = true; // Default true rakha hai taake info save ho jaye
 
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedShippingInfo(); // Screen khulte hi saved info fetch karna
+  }
 
+  // Firestore se pichli saved shipping info lane ka function
+  Future<void> _loadSavedShippingInfo() async {
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(widget.userId)
+          .get();
+
+      if (doc.exists && doc.data() != null) {
+        final data = doc.data()!;
+        final shipping = data['shippingAddress'] as Map<String, dynamic>?;
+
+        if (shipping != null && mounted) {
+          setState(() {
+            _firstNameController.text = shipping['firstName'] ?? '';
+            _lastNameController.text = shipping['lastName'] ?? '';
+            _emailController.text = shipping['email'] ?? '';
+            _phoneController.text = shipping['phone'] ?? '';
+            _secondaryPhoneController.text = shipping['secondaryPhone'] ?? '';
+            _postalCodeController.text = shipping['postalCode'] ?? '';
+            _addressController.text = shipping['address'] ?? '';
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error loading saved shipping info: $e');
+    }
+  }
+
+  // Shipping info ko Firestore mein save karne ka function
+  Future<void> _saveShippingInfoToDatabase() async {
+    if (!_isSavingInfo) return;
+    try {
+      await FirebaseFirestore.instance.collection('users').doc(widget.userId).set({
+        'shippingAddress': {
+          'firstName': _firstNameController.text.trim(),
+          'lastName': _lastNameController.text.trim(),
+          'email': _emailController.text.trim(),
+          'phone': _phoneController.text.trim(),
+          'secondaryPhone': _secondaryPhoneController.text.trim(),
+          'postalCode': _postalCodeController.text.trim(),
+          'address': _addressController.text.trim(),
+        }
+      }, SetOptions(merge: true));
+    } catch (e) {
+      debugPrint('Error saving shipping info: $e');
+    }
+  }
 
   Future<void> _handleCheckout() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
 
-
-
     try {
+      // Order place karne se pehle info save karlein agar user ne option select kiya hai
+      await _saveShippingInfoToDatabase();
+
       await OrderService.instance.placeOrder(
         userId: widget.userId,
         firstName: _firstNameController.text,
@@ -83,7 +137,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => Dashboard(userId: FirebaseAuth.instance.currentUser?.uid ?? '')),
+        MaterialPageRoute(
+          builder: (context) =>
+              Dashboard(userId: FirebaseAuth.instance.currentUser?.uid ?? ''),
+        ),
         (route) => false,
       );
     } catch (e) {
@@ -293,6 +350,23 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 10),
+                    // Save Info Checkbox option
+                    CheckboxListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text(
+                        'Save this information for future orders',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                      ),
+                      value: _isSavingInfo,
+                      activeColor: AppColors.primaryDark,
+                      controlAffinity: ListTileControlAffinity.leading,
+                      onChanged: (val) {
+                        setState(() {
+                          _isSavingInfo = val ?? true;
+                        });
+                      },
+                    ),
                   ],
                 ),
               ),
@@ -358,7 +432,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       ),
                     ),
                   ],
-
                 ),
               ),
               const SizedBox(height: 16),

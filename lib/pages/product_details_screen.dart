@@ -61,8 +61,13 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             final String name =
                 data[AppStrings.nameField] ?? AppStrings.defaultProductName;
             final num price = data[AppStrings.priceField] ?? 0;
-            final String imageUrl = data[AppStrings.imageUrlField] ?? '';
-            final String description = data['description'] ??
+            
+            final List<dynamic> imageUrlsList = data['imageUrls'] ?? [];
+            final String imageUrl = imageUrlsList.isNotEmpty
+                ? imageUrlsList.first
+                : (data[AppStrings.imageUrlField] ?? '');
+            final String description =
+                data['description'] ??
                 'No description available for this product.';
 
             return CustomScrollView(
@@ -93,9 +98,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       imageUrl: imageUrl,
                       fit: BoxFit.contain,
                       fadeInDuration: const Duration(milliseconds: 100),
-                      placeholder: (context, url) => Container(
-                        color: AppColors.hintGrey,
-                      ),
+                      placeholder: (context, url) =>
+                          Container(color: AppColors.hintGrey),
                       errorWidget: (context, url, error) => Container(
                         color: AppColors.hintGrey,
                         child: const Icon(
@@ -165,11 +169,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
                           const Row(
                             children: [
-                              Icon(
-                                Icons.star,
-                                color: Colors.amber,
-                                size: 18,
-                              ),
+                              Icon(Icons.star, color: Colors.amber, size: 18),
                               SizedBox(width: 4),
                               Text(
                                 '4.8',
@@ -261,7 +261,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                           _isAddingToCart = false;
                         });
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Error: User not logged in')),
+                          const SnackBar(
+                            content: Text('Error: User not logged in'),
+                          ),
                         );
                       }
                       return;
@@ -282,13 +284,19 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     }
 
                     final data = docSnapshot.data() as Map<String, dynamic>;
+                    final List<dynamic> imageUrlsList = data['imageUrls'] ?? [];
+                    final String cartImageUrl = imageUrlsList.isNotEmpty
+                        ? imageUrlsList.first
+                        : (data[AppStrings.imageUrlField] ?? '');
 
                     await _cartService.addToCart(
                       userId: userId,
                       productId: widget.productId,
-                      name: data[AppStrings.nameField] ?? AppStrings.defaultProductName,
+                      name:
+                          data[AppStrings.nameField] ??
+                          AppStrings.defaultProductName,
                       price: data[AppStrings.priceField] ?? 0,
-                      imageUrl: data[AppStrings.imageUrlField] ?? '',
+                      imageUrl: cartImageUrl,
                       quantity: _selectedQuantity,
                     );
 

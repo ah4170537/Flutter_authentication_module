@@ -31,6 +31,12 @@ class _ProductHorizontalSectionState extends State<ProductHorizontalSection> {
   bool _isForward = true;
 
   @override
+  void initState() {
+    super.initState();
+    _startAutoScroll();
+  }
+
+  @override
   void dispose() {
     _timer?.cancel();
     _scrollController.dispose();
@@ -149,9 +155,6 @@ class _ProductHorizontalSectionState extends State<ProductHorizontalSection> {
               );
             }
 
-            // Start auto scrolling once data is loaded
-            _startAutoScroll();
-
             return SizedBox(
               height: 225,
               child: ListView.builder(
@@ -165,7 +168,12 @@ class _ProductHorizontalSectionState extends State<ProductHorizontalSection> {
                   final String productId = doc.id;
                   final String name = data[AppStrings.nameField] ?? AppStrings.defaultProductName;
                   final num price = data[AppStrings.priceField] ?? 0;
-                  final String imageUrl = data[AppStrings.imageUrlField] ?? '';
+                  
+                  // Support both list array `imageUrls` and legacy single string field
+                  final List<dynamic> imageUrlsList = data['imageUrls'] ?? [];
+                  final String imageUrl = imageUrlsList.isNotEmpty 
+                      ? imageUrlsList.first 
+                      : (data[AppStrings.imageUrlField] ?? '');
 
                   return ProductCard(
                     name: name,
@@ -204,7 +212,6 @@ class PopularProductsSection extends StatelessWidget {
   }
 }
 
-// Dedicated Best Selling Section
 class BestSellingProductsSection extends StatelessWidget {
   const BestSellingProductsSection({super.key});
 

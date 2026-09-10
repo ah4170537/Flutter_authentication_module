@@ -468,8 +468,9 @@ class Dashboard extends StatelessWidget {
                           data[AppStrings.nameField] ??
                           AppStrings.defaultProductName;
                       final num price = data[AppStrings.priceField] ?? 0;
-                      final String imageUrl =
-                          data[AppStrings.imageUrlField] ?? '';
+                      // Update this part inside your CarouselSlider itemBuilder:
+final List<dynamic> imageUrlsList = data['imageUrls'] ?? [];
+final String imageUrl = imageUrlsList.isNotEmpty ? imageUrlsList.first : (data[AppStrings.imageUrlField] ?? '');
 
                       return GestureDetector(
                         onTap: () {

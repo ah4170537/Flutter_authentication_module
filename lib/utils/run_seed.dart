@@ -41,6 +41,8 @@ void main() async {
       'subCategory': 'headphones',
       'imagePaths': [
         'assets/products/headphones.jpg',
+        'assets/products/headphones1.jpg',
+        'assets/products/headphones2.jpg',
       ],
     },
     {
@@ -52,6 +54,8 @@ void main() async {
       'subCategory': 'camera',
       'imagePaths': [
         'assets/products/camera.jpg',
+        'assets/products/camera1.jpg',
+        'assets/products/camera2.jpg',
       ],
     },
     {
@@ -63,6 +67,8 @@ void main() async {
       'subCategory': 'laptop',
       'imagePaths': [
         'assets/products/laptop.png',
+        'assets/products/laptop1.png',
+        'assets/products/laptop2.png',
       ],
     },
     {
@@ -74,6 +80,8 @@ void main() async {
       'subCategory': 'headphones',
       'imagePaths': [
         'assets/products/studio_headphones.jpg',
+        'assets/products/studio_headphones1.jpg',
+        'assets/products/studio_headphones2.jpg',
       ],
     },
 
@@ -87,6 +95,8 @@ void main() async {
       'subCategory': 'smartwatch',
       'imagePaths': [
         'assets/products/smartwatch.jpg',
+        'assets/products/smartwatch1.jpg',
+        'assets/products/smartwatch2.jpg',
       ],
     },
     {
@@ -98,6 +108,8 @@ void main() async {
       'subCategory': 'shoes',
       'imagePaths': [
         'assets/products/shoes.jpg',
+        'assets/products/shoes1.png',
+        'assets/products/shoes2.png',
       ],
     },
     {
@@ -106,9 +118,11 @@ void main() async {
       'description': '7.1 Surround sound with noise-canceling microphone.',
       'price': 10000,
       'category': 'best_selling',
-      'subCategory': 'gaming_headset',
+      'subCategory': 'headphones',
       'imagePaths': [
         'assets/products/gaming_headset.jpg',
+        'assets/products/gaming_headset1.jpg',
+        'assets/products/gaming_headset2.jpg',
       ],
     },
     {
@@ -120,6 +134,9 @@ void main() async {
       'subCategory': 'perfume',
       'imagePaths': [
         'assets/products/perfume.png',
+        'assets/products/perfume1.png',
+        'assets/products/perfume2.png',
+        
       ],
     },
 
@@ -133,6 +150,8 @@ void main() async {
       'subCategory': 'leather_shoes',
       'imagePaths': [
         'assets/products/leather_shoes.jpg',
+        'assets/products/leather_shoes1.png',
+        'assets/products/leather_shoes2.png',
       ],
     },
     {
@@ -144,6 +163,8 @@ void main() async {
       'subCategory': 'sunglasses',
       'imagePaths': [
         'assets/products/sunglasses.jpg',
+        'assets/products/sunglasses1.jpg',
+        'assets/products/sunglasses2.png',
       ],
     },
     {
@@ -155,6 +176,8 @@ void main() async {
       'subCategory': 'sneakers',
       'imagePaths': [
         'assets/products/puma_sneakers.jpg',
+        'assets/products/puma_sneakers1.png',
+        'assets/products/puma_sneakers2.png',
       ],
     },
     {
@@ -166,6 +189,8 @@ void main() async {
       'subCategory': 'stool',
       'imagePaths': [
         'assets/products/wooden_stool.jpg',
+        'assets/products/wooden_stool1.jpg',
+        'assets/products/wooden_stool2.jpg',
       ],
     },
     {
@@ -177,6 +202,8 @@ void main() async {
       'subCategory': 'smartwatch',
       'imagePaths': [
         'assets/products/black_watch.jpg',
+        'assets/products/black_watch1.png',
+        'assets/products/black_watch2.jpg',
       ],
     },
   ];

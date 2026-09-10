@@ -26,7 +26,11 @@ class SeeAllProductsScreen extends StatelessWidget {
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.textDark, size: 18),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: AppColors.textDark,
+            size: 18,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -46,9 +50,7 @@ class SeeAllProductsScreen extends StatelessWidget {
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
-              child: CircularProgressIndicator(
-                color: AppColors.primaryDark,
-              ),
+              child: CircularProgressIndicator(color: AppColors.primaryDark),
             );
           }
 
@@ -104,16 +106,22 @@ class SeeAllProductsScreen extends StatelessWidget {
               final doc = docs[index];
               final data = doc.data() as Map<String, dynamic>;
               final String productId = doc.id;
-              final String name = data[AppStrings.nameField] ?? AppStrings.defaultProductName;
+              final String name =
+                  data[AppStrings.nameField] ?? AppStrings.defaultProductName;
               final num price = data[AppStrings.priceField] ?? 0;
-              final String imageUrl = data[AppStrings.imageUrlField] ?? '';
+          
+              final List<dynamic> imageUrlsList = data['imageUrls'] ?? [];
+              final String imageUrl = imageUrlsList.isNotEmpty
+                  ? imageUrlsList.first
+                  : (data[AppStrings.imageUrlField] ?? '');
 
               return GestureDetector(
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => ProductDetailsScreen(productId: productId),
+                      builder: (_) =>
+                          ProductDetailsScreen(productId: productId),
                     ),
                   );
                 },
@@ -135,23 +143,25 @@ class SeeAllProductsScreen extends StatelessWidget {
                       // Product Image
                       Expanded(
                         child: ClipRRect(
-                          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(16),
+                          ),
                           child: Stack(
                             children: [
                               Positioned.fill(
                                 child: CachedNetworkImage(
                                   imageUrl: imageUrl,
                                   fit: BoxFit.cover,
-                                  placeholder: (context, url) => Container(
-                                    color: AppColors.hintGrey,
-                                  ),
-                                  errorWidget: (context, url, error) => Container(
-                                    color: AppColors.hintGrey,
-                                    child: const Icon(
-                                      Icons.image_not_supported,
-                                      color: AppColors.textGrey,
-                                    ),
-                                  ),
+                                  placeholder: (context, url) =>
+                                      Container(color: AppColors.hintGrey),
+                                  errorWidget: (context, url, error) =>
+                                      Container(
+                                        color: AppColors.hintGrey,
+                                        child: const Icon(
+                                          Icons.image_not_supported,
+                                          color: AppColors.textGrey,
+                                        ),
+                                      ),
                                 ),
                               ),
                             ],

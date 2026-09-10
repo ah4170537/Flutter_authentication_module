@@ -17,6 +17,7 @@ class OrderDetailScreen extends StatelessWidget {
         : (FirebaseAuth.instance.currentUser?.uid ?? '');
 
     return Scaffold(
+       backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text('Order Details'),
         backgroundColor: AppColors.white,
@@ -90,6 +91,7 @@ class OrderDetailScreen extends StatelessWidget {
                       final String imageUrl = item['imageUrl'] ?? '';
 
                       return Card(
+                        color: Colors.white,
                         margin: const EdgeInsets.only(bottom: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),

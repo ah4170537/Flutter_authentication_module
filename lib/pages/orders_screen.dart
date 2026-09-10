@@ -31,6 +31,7 @@ class OrdersScreen extends StatelessWidget {
     }
 
     return Scaffold(
+       backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text('My Orders'),
         backgroundColor: AppColors.white,
@@ -89,6 +90,7 @@ class OrdersScreen extends StatelessWidget {
               final status = orderData['status'] ?? 'Pending';
 
               return Card(
+                color: Colors.white,
                 margin: const EdgeInsets.only(bottom: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),

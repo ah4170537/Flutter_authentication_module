@@ -85,7 +85,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 SliverAppBar(
                   expandedHeight: 320,
                   pinned: true,
-                  elevation: 0,
+                  scrolledUnderElevation: 0,
                   backgroundColor: AppColors.white,
                   automaticallyImplyLeading: false,
                   leading: Padding(

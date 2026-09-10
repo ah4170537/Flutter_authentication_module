@@ -33,7 +33,7 @@ class ProductReviewsSection extends StatelessWidget {
           );
         }
 
-        // Sirf pehle 3 reviews nikalne ke liye
+     
         final displayReviews = allReviews.take(3).toList();
 
         return Padding(
@@ -70,7 +70,8 @@ class ProductReviewsSection extends StatelessWidget {
                 itemBuilder: (context, index) {
                   final review = displayReviews[index];
                   return Card(
-                    margin: const EdgeInsets.only(bottom: 8.0),
+                    color: Colors.white,
+                    margin: const EdgeInsets.only(bottom: 10.0),
                     child: Padding(
                       padding: const EdgeInsets.all(12.0),
                       child: Column(

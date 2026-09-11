@@ -35,6 +35,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final _secondaryPhoneController = TextEditingController();
   final _postalCodeController = TextEditingController();
   final _addressController = TextEditingController();
+  final _cityController = TextEditingController();
 
   String _selectedDeliveryMode = 'Cash on Delivery';
   bool _isLoading = false;
@@ -46,7 +47,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     _loadSavedShippingInfo(); // Screen khulte hi saved info fetch karna
   }
 
-  // Firestore se pichli saved shipping info lane ka function
+  // Firestore se saved shipping info lane ka function.
+  // `shippingAddress` is the single source of truth — it's populated
+  // right at registration (from the popup) and kept up to date by the
+  // "Save this information" checkbox on every checkout after that.
   Future<void> _loadSavedShippingInfo() async {
     try {
       final doc = await FirebaseFirestore.instance
@@ -54,22 +58,34 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           .doc(widget.userId)
           .get();
 
-      if (doc.exists && doc.data() != null) {
-        final data = doc.data()!;
-        final shipping = data['shippingAddress'] as Map<String, dynamic>?;
+      if (!doc.exists || doc.data() == null || !mounted) return;
 
-        if (shipping != null && mounted) {
-          setState(() {
-            _firstNameController.text = shipping['firstName'] ?? '';
-            _lastNameController.text = shipping['lastName'] ?? '';
-            _emailController.text = shipping['email'] ?? '';
-            _phoneController.text = shipping['phone'] ?? '';
-            _secondaryPhoneController.text = shipping['secondaryPhone'] ?? '';
-            _postalCodeController.text = shipping['postalCode'] ?? '';
-            _addressController.text = shipping['address'] ?? '';
-          });
-        }
+      final data = doc.data()!;
+      final shipping = data['shippingAddress'] as Map<String, dynamic>?;
+
+      // Email falls back to the account's auth email if shippingAddress
+      // doesn't have one yet (e.g. a guest checked out once before
+      // registering, so shippingAddress predates having a real email).
+      final User? authUser = FirebaseAuth.instance.currentUser;
+
+      if (shipping == null) {
+        setState(() {
+          _emailController.text = data['email'] ?? authUser?.email ?? '';
+        });
+        return;
       }
+
+      setState(() {
+        _firstNameController.text = shipping['firstName'] ?? '';
+        _lastNameController.text = shipping['lastName'] ?? '';
+        _emailController.text =
+            shipping['email'] ?? data['email'] ?? authUser?.email ?? '';
+        _phoneController.text = shipping['phone'] ?? '';
+        _secondaryPhoneController.text = shipping['secondaryPhone'] ?? '';
+        _postalCodeController.text = shipping['postalCode'] ?? '';
+        _addressController.text = shipping['address'] ?? '';
+        _cityController.text = shipping['city'] ?? '';
+      });
     } catch (e) {
       debugPrint('Error loading saved shipping info: $e');
     }
@@ -88,6 +104,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           'secondaryPhone': _secondaryPhoneController.text.trim(),
           'postalCode': _postalCodeController.text.trim(),
           'address': _addressController.text.trim(),
+          'city': _cityController.text.trim(),
         }
       }, SetOptions(merge: true));
     } catch (e) {
@@ -112,6 +129,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         phone: _phoneController.text,
         secondaryPhone: _secondaryPhoneController.text,
         address: _addressController.text,
+        city: _cityController.text,
         postalCode: _postalCodeController.text,
         deliveryMode: _selectedDeliveryMode,
         cartItems: widget.cartItems,
@@ -168,6 +186,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     _secondaryPhoneController.dispose();
     _postalCodeController.dispose();
     _addressController.dispose();
+    _cityController.dispose();
     super.dispose();
   }
 
@@ -323,12 +342,28 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     Row(
                       children: [
                         Expanded(
-                          flex: 2,
                           child: TextFormField(
                             controller: _addressController,
                             decoration: _buildInputDecoration(
                               'Street Address',
                               Icons.home_outlined,
+                            ),
+                            validator: (v) =>
+                                v == null || v.isEmpty ? 'Required' : null,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: TextFormField(
+                            controller: _cityController,
+                            decoration: _buildInputDecoration(
+                              'City',
+                              Icons.location_city_outlined,
                             ),
                             validator: (v) =>
                                 v == null || v.isEmpty ? 'Required' : null,

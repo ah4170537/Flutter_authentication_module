@@ -5,6 +5,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../constants/app_strings.dart';
 import '../services/auth_service.dart';
+import '../services/cart_merge_helper.dart';
 import '../utils/validators.dart';
 import '../widgets/gradient_header.dart';
 import '../widgets/pill_button.dart';
@@ -12,6 +13,7 @@ import '../widgets/auth_text_field.dart';
 import '../widgets/social_icons_row.dart';
 import '../widgets/auth_footer_link.dart';
 import '../widgets/auth_card.dart';
+import '../widgets/registration_details_dialog.dart';
 import 'login.dart';
 import 'dashboard.dart';
 
@@ -26,6 +28,8 @@ class _RegisterState extends State<Register> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  final CartMergeHelper _cartMergeHelper = CartMergeHelper();
   bool _isLoading = false;
 
   @override
@@ -33,6 +37,7 @@ class _RegisterState extends State<Register> {
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -51,19 +56,58 @@ class _RegisterState extends State<Register> {
       _showMessage(passwordError);
       return;
     }
+    if (_confirmPasswordController.text != _passwordController.text) {
+      _showMessage("Passwords do not match");
+      return;
+    }
 
+    // All base fields are valid — now collect the additional profile
+    // details via the popup before actually creating the account.
+    final RegistrationDetails? details = await showRegistrationDetailsDialog(
+      context,
+    );
+
+    // User cancelled the popup — don't proceed with registration.
+    if (details == null) return;
+
+    if (!mounted) return;
     setState(() => _isLoading = true);
     try {
+      // Capture the guest's UID BEFORE creating the new account — once
+      // signUp() succeeds, FirebaseAuth.instance.currentUser switches to
+      // the new account and the anonymous UID is no longer reachable.
+      final User? preRegisterUser = FirebaseAuth.instance.currentUser;
+      final bool wasGuest = preRegisterUser?.isAnonymous ?? false;
+      final String? guestUserId = wasGuest ? preRegisterUser?.uid : null;
+
       final credential = await AuthService.instance.signUp(
-        name: _nameController.text, // Add this back
+        name: _nameController.text,
         email: _emailController.text,
         password: _passwordController.text,
+        firstName: details.firstName,
+        lastName: details.lastName,
+        phone: details.phone,
+        address: details.address,
+        city: details.city,
       );
       await credential.user?.updateDisplayName(_nameController.text.trim());
 
       if (!mounted) return;
 
       final String userId = credential.user?.uid ?? '';
+
+      // Merge any items the guest added to their cart into this brand-new
+      // account's cart. Since a new account has no cart yet, this simply
+      // copies the guest's items over. Safe to call even if the guest
+      // cart was empty — it just returns early in that case.
+      if (guestUserId != null && guestUserId.isNotEmpty) {
+        await _cartMergeHelper.mergeGuestCartIntoUser(
+          guestUserId: guestUserId,
+          newUserId: userId,
+        );
+      }
+
+      if (!mounted) return;
 
       Navigator.pushAndRemoveUntil(
         context,
@@ -119,6 +163,12 @@ class _RegisterState extends State<Register> {
                       AuthTextField(
                         label: AppStrings.passwordLabel,
                         controller: _passwordController,
+                        icon: Icons.lock_outline,
+                        isPassword: true,
+                      ),
+                      AuthTextField(
+                        label: 'Confirm Password',
+                        controller: _confirmPasswordController,
                         icon: Icons.lock_outline,
                         isPassword: true,
                       ),

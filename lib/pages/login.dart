@@ -15,6 +15,7 @@ import '../widgets/auth_footer_link.dart';
 import '../widgets/auth_card.dart';
 import 'register.dart';
 import 'dashboard.dart';
+import '../services/cart_merge_helper.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -26,6 +27,7 @@ class Login extends StatefulWidget {
 class _LoginState extends State<Login> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final CartMergeHelper _cartMergeHelper = CartMergeHelper();
   bool _isLoading = false;
 
   @override
@@ -48,20 +50,33 @@ class _LoginState extends State<Login> {
 
     setState(() => _isLoading = true);
     try {
+      final User? preLoginUser = FirebaseAuth.instance.currentUser;
+      final bool wasGuest = preLoginUser?.isAnonymous ?? false;
+      final String? guestUserId = wasGuest ? preLoginUser?.uid : null;
+
       final UserCredential userCredential = await AuthService.instance.signIn(
         email: _emailController.text,
         password: _passwordController.text,
       );
       if (!mounted) return;
-      
+
       final String userId = userCredential.user?.uid ?? '';
+
+      if (guestUserId != null && guestUserId.isNotEmpty) {
+        await _cartMergeHelper.mergeGuestCartIntoUser(
+          guestUserId: guestUserId,
+          newUserId: userId,
+        );
+      }
+
+      if (!mounted) return;
 
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (_) => Dashboard(userId: userId)),
         (route) => false,
       );
-    } on FirebaseAuthException catch (e) { 
+    } on FirebaseAuthException catch (e) {
       _showMessage(AuthService.instance.messageForError(e));
     } catch (_) {
       _showMessage("Something went wrong. Please try again.");

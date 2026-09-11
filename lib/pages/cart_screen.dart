@@ -5,6 +5,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../services/cart_service.dart';
 import '../theme/app_colors.dart';
 import 'checkout_screen.dart';
+import 'login.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class CartScreen extends StatefulWidget {
   final String userId;
@@ -20,7 +22,7 @@ class _CartScreenState extends State<CartScreen> {
   late final Stream<QuerySnapshot<Map<String, dynamic>>> _cartStream;
   bool _isCheckingOut = false;
 
-  // Un items ki IDs ko track karne ke liye jo user ne untick ki hain
+  // Track product IDs that the user has unchecked
   final Set<String> _deselectedIds = {};
 
   @override
@@ -96,7 +98,6 @@ class _CartScreenState extends State<CartScreen> {
             final num price = data['price'] ?? 0;
             final num quantity = data['quantity'] ?? 1;
 
-            // Check karein kya yeh product user ne select (tick) kiya hua hai?
             final bool isSelected = !_deselectedIds.contains(productId);
 
             final itemMap = {
@@ -114,7 +115,6 @@ class _CartScreenState extends State<CartScreen> {
           }
 
           const double deliveryFee = 300.0;
-          // Agar koi item select nahi hai toh delivery fee bhi 0 ho jayegi ya aap apni marzi se rakh sakte hain
           double total = selectedCartItems.isEmpty
               ? 0.0
               : subtotal + deliveryFee;
@@ -152,7 +152,6 @@ class _CartScreenState extends State<CartScreen> {
                       ),
                       child: Row(
                         children: [
-                          // Checkbox for selecting product for checkout
                           Checkbox(
                             value: isSelected,
                             activeColor: AppColors.primaryDark,
@@ -371,6 +370,27 @@ class _CartScreenState extends State<CartScreen> {
 
                                 if (!context.mounted) return;
 
+                                final User? currentUser =
+                                    FirebaseAuth.instance.currentUser;
+                                final bool isGuest =
+                                    currentUser == null ||
+                                    currentUser.isAnonymous;
+
+                                if (isGuest) {
+                                  setState(() {
+                                    _isCheckingOut = false;
+                                  });
+
+                                  _showGuestCheckoutPopup(
+                                    context,
+                                    widget.userId,
+                                    subtotal,
+                                    deliveryFee,
+                                    selectedCartItems,
+                                  );
+                                  return;
+                                }
+
                                 await Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -378,9 +398,8 @@ class _CartScreenState extends State<CartScreen> {
                                       userId: widget.userId,
                                       subtotal: subtotal,
                                       deliveryFee: deliveryFee,
-                                      cartItems: selectedCartItems, // Sirf selected items pass hongi
+                                      cartItems: selectedCartItems,
                                       onOrderCompleted: () async {
-                                        // Order complete hone par sirf wahi items cart se delete hongi jo order hui hain
                                         for (var item in selectedCartItems) {
                                           await _cartService.removeFromCart(
                                             userId: widget.userId,
@@ -436,4 +455,99 @@ class _CartScreenState extends State<CartScreen> {
       ),
     );
   }
+}
+
+void _showGuestCheckoutPopup(
+  BuildContext context,
+  String userId,
+  double subtotal,
+  double deliveryFee,
+  List<Map<String, dynamic>> cartItems,
+) {
+  final CartService cartService = CartService();
+
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    ),
+    builder: (context) {
+      return Padding(
+        padding: EdgeInsets.fromLTRB(
+          24, 24, 24, MediaQuery.of(context).viewInsets.bottom + 24,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Checkout Options',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'You are browsing as a guest. How would you like to proceed?',
+              style: TextStyle(color: Colors.grey, fontSize: 14),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryDark,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onPressed: () {
+                Navigator.pop(context); // Close sheet
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CheckoutScreen(
+                      userId: userId,
+                      subtotal: subtotal,
+                      deliveryFee: deliveryFee,
+                      cartItems: cartItems,
+                      onOrderCompleted: () async {
+                        for (var item in cartItems) {
+                          await cartService.removeFromCart(
+                            userId: userId,
+                            productId: item['productId'],
+                          );
+                        }
+                      },
+                    ),
+                  ),
+                );
+              },
+              child: const Text(
+                'Continue as Guest (One-Time Order)',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onPressed: () {
+                Navigator.pop(context); // Close sheet
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const Login()),
+                );
+              },
+              child: const Text('Login or Register'),
+            ),
+          ],
+        ),
+      );
+    },
+  );
 }

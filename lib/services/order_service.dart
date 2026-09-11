@@ -21,6 +21,7 @@ class OrderService {
     required String phone,
     required String secondaryPhone,
     required String address,
+    required String city,
     required String postalCode,
     required String deliveryMode,
     required List<Map<String, dynamic>> cartItems,
@@ -38,8 +39,12 @@ class OrderService {
         .collection('user_orders')
         .doc();
 
+    // The Order ID customers use for tracking — Firestore's auto-generated
+    // document ID, captured here so it can be reused below for the email.
+    final String orderId = orderRef.id;
+
     await orderRef.set({
-      'orderId': orderRef.id,
+      'orderId': orderId,
       'userId': userId,
       'firstName': firstName.trim(),
       'lastName': lastName.trim(),
@@ -47,6 +52,7 @@ class OrderService {
       'phone': phone.trim(),
       'secondaryPhone': secondaryPhone.trim(),
       'address': address.trim(),
+      'city': city.trim(),
       'postalCode': postalCode.trim(),
       'deliveryMode': deliveryMode,
       'items': cartItems,
@@ -56,16 +62,22 @@ class OrderService {
       'createdAt': FieldValue.serverTimestamp(),
     });
 
-    // Clear user's cart items from the root 'cart' collection
-    final cartSnapshots = await _firestore
-        .collection('cart')
-        .doc(userId)
-        .collection('user_cart')
-        .get();
-
+    // Remove ONLY the items that were part of this order — not the whole
+    // cart. cartItems here is the list of selected/checked-out products
+    // (each with a 'productId'), so we target them by ID directly instead
+    // of reading and wiping the entire user_cart subcollection.
     final batch = _firestore.batch();
-    for (var doc in cartSnapshots.docs) {
-      batch.delete(doc.reference);
+    for (final item in cartItems) {
+      final String? productId = item['productId'];
+      if (productId == null || productId.isEmpty) continue;
+
+      final itemRef = _firestore
+          .collection('cart')
+          .doc(userId)
+          .collection('user_cart')
+          .doc(productId);
+
+      batch.delete(itemRef);
     }
     await batch.commit();
 
@@ -94,13 +106,14 @@ class OrderService {
           'to_name': fullName,
           'to_email': trimmedEmail,
           'order_address':
-              '${address.trim()}, Postal Code: ${postalCode.trim()}',
+              '${address.trim()}, ${city.trim()}, Postal Code: ${postalCode.trim()}',
           'phone': phone.trim(),
           'delivery_mode': deliveryMode,
           'order_items': formattedItems,
           'subtotal': 'PKR ${subtotal.toStringAsFixed(2)}',
           'delivery_fee': 'PKR ${deliveryFee.toStringAsFixed(2)}',
           'total_amount': 'PKR ${total.toStringAsFixed(2)}',
+          'order_id': orderId,
         },
       }),
     );

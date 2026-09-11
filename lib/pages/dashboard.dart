@@ -15,6 +15,7 @@ import 'cart_screen.dart';
 import 'login.dart';
 import 'product_details_screen.dart';
 import 'see_all_products_screen.dart';
+import '../services/auth_wrapper.dart';
 
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -23,28 +24,39 @@ class Dashboard extends StatelessWidget {
 
   const Dashboard({super.key, required this.userId}); // Update constructor
 
-  Future<void> _logout(BuildContext context) async {
-    await AuthService.instance.signOut();
+ Future<void> _logout(BuildContext context) async {
+  await AuthService.instance.signOut();
 
-    if (!context.mounted) return;
 
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (_) => const Login()),
-      (route) => false,
-    );
+  try {
+    await FirebaseAuth.instance.signInAnonymously();
+  } catch (_) {
+   
   }
+
+  if (!context.mounted) return;
+
+  Navigator.pushAndRemoveUntil(
+    context,
+    MaterialPageRoute(builder: (_) => const AuthWrapper()),
+    (route) => false,
+  );
+}
 
   @override
   Widget build(BuildContext context) {
     final User? user = FirebaseAuth.instance.currentUser;
-    // You can now use the passed userId directly or fallback to user?.uid
+    final bool isGuest = user?.isAnonymous ?? true;
+
     final String currentUserId = userId.isNotEmpty ? userId : (user?.uid ?? '');
-    final String userName =
-        user?.displayName ??
-        user?.email?.split('@').first ??
-        AppStrings.userFallback;
-    final String userEmail = user?.email ?? 'No email provided';
+    final String userName = isGuest
+        ? 'Guest'
+        : (user?.displayName ??
+              user?.email?.split('@').first ??
+              AppStrings.userFallback);
+    final String userEmail = isGuest
+        ? 'Browsing as guest'
+        : (user?.email ?? 'No email provided');
 
     return Scaffold(
       backgroundColor: AppColors.white,
@@ -211,6 +223,24 @@ class Dashboard extends StatelessWidget {
                         // TODO: Navigate to SupportScreen
                       },
                     ),
+                    if (isGuest)
+                      ListTile(
+                        leading: const Icon(
+                          Icons.login_rounded,
+                          color: AppColors.primaryDark,
+                        ),
+                        title: const Text(
+                          'Login / Register',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const Login()),
+                          );
+                        },
+                      ),
                   ],
                 ),
               ),

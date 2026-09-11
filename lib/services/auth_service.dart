@@ -15,54 +15,105 @@ class AuthService {
   User? get currentUser => _auth.currentUser;
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
+  /// True while a signIn/signUp/signOut call is actively in progress.
+  /// AuthWrapper's guest bootstrapper checks this before firing an
+  /// automatic anonymous sign-in, to avoid racing with a real auth
+  /// transition that's already underway (which can otherwise cause a
+  /// stale/incorrect session to end up persisted).
+  static bool isAuthTransitionInProgress = false;
+
   // EmailJS Credentials
   static const String _emailJsServiceId = 'service_3a778zs';
   static const String _emailJsTemplateId = 'template_n4ykzgf';
   static const String _emailJsPublicKey = 'xLJyWo6CV8LvFq26t';
 
-  /// SignUp updated to capture name and save to Firestore + Auth Display Name
+  /// SignUp updated to capture name and save to Firestore + Auth Display Name.
+  ///
+  /// [firstName], [lastName], [phone], [address], and [city] are optional so
+  /// existing call sites that only pass [name] keep working. When provided,
+  /// they're stored alongside the base profile in Firestore.
   Future<UserCredential> signUp({
     required String name,
     required String email,
     required String password,
+    String? firstName,
+    String? lastName,
+    String? phone,
+    String? address,
+    String? city,
   }) async {
-    final trimmedEmail = email.trim().toLowerCase();
-    final trimmedName = name.trim();
+    isAuthTransitionInProgress = true;
+    try {
+      final trimmedEmail = email.trim().toLowerCase();
+      final trimmedName = name.trim();
 
-    final credential = await _auth.createUserWithEmailAndPassword(
-      email: trimmedEmail,
-      password: password,
-    );
+      final credential = await _auth.createUserWithEmailAndPassword(
+        email: trimmedEmail,
+        password: password,
+      );
 
-    if (credential.user != null) {
-      // 1. Update Firebase Auth Display Name
-      await credential.user!.updateDisplayName(trimmedName);
+      if (credential.user != null) {
+        // 1. Update Firebase Auth Display Name
+        await credential.user!.updateDisplayName(trimmedName);
 
-      // 2. Save user document in Firestore matching the new schema
-      try {
-        await _firestore.collection('users').doc(credential.user!.uid).set({
-          'uid': credential.user!.uid,
-          'name': trimmedName,
-          'email': trimmedEmail,
-          'createdAt': FieldValue.serverTimestamp(),
-        });
-      } catch (_) {}
+        // 2. Save user document in Firestore.
+        // Identity/contact fields (name, email, phone) live at the top
+        // level. Anything shipping-related (address, city, postal code,
+        // secondary phone) lives ONLY inside `shippingAddress` — this is
+        // the single source of truth the checkout screen reads from, so
+        // there's no duplicate/stale data between registration and
+        // checkout-saved info.
+        try {
+          await _firestore.collection('users').doc(credential.user!.uid).set({
+            'uid': credential.user!.uid,
+            'name': trimmedName,
+            'email': trimmedEmail,
+            if (phone != null) 'phone': phone.trim(),
+            'createdAt': FieldValue.serverTimestamp(),
+            if (firstName != null || lastName != null || phone != null || address != null || city != null)
+              'shippingAddress': {
+                if (firstName != null) 'firstName': firstName.trim(),
+                if (lastName != null) 'lastName': lastName.trim(),
+                'email': trimmedEmail,
+                if (phone != null) 'phone': phone.trim(),
+                'secondaryPhone': '',
+                'postalCode': '',
+                if (address != null) 'address': address.trim(),
+                if (city != null) 'city': city.trim(),
+              },
+          });
+        } catch (_) {}
+      }
+
+      return credential;
+    } finally {
+      isAuthTransitionInProgress = false;
     }
-
-    return credential;
   }
 
   Future<UserCredential> signIn({
     required String email,
     required String password,
-  }) {
-    return _auth.signInWithEmailAndPassword(
-      email: email.trim(),
-      password: password,
-    );
+  }) async {
+    isAuthTransitionInProgress = true;
+    try {
+      return await _auth.signInWithEmailAndPassword(
+        email: email.trim(),
+        password: password,
+      );
+    } finally {
+      isAuthTransitionInProgress = false;
+    }
   }
 
-  Future<void> signOut() => _auth.signOut();
+  Future<void> signOut() async {
+    isAuthTransitionInProgress = true;
+    try {
+      await _auth.signOut();
+    } finally {
+      isAuthTransitionInProgress = false;
+    }
+  }
 
   Future<bool> checkEmailExists(String email) async {
     final trimmedEmail = email.trim().toLowerCase();
